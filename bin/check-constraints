@@ -1,0 +1,64 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+APP_SPEC="$ROOT_DIR/docs/app-design-spec.md"
+MEETING_DOC="$ROOT_DIR/docs/meeting-capture-design.md"
+
+fail() {
+  message=$1
+  remediation=$2
+  reference=$3
+  echo "ERROR: $message"
+  echo "  -> remediation: $remediation"
+  echo "  -> see: $reference"
+  exit 1
+}
+
+check_contains() {
+  file=$1
+  text=$2
+  message=$3
+  remediation=$4
+  reference=$5
+  if ! grep -Fq "$text" "$file"; then
+    fail "$message" "$remediation" "$reference"
+  fi
+}
+
+check_contains "$APP_SPEC" "Invariant: Version 1 is local-only." \
+  "docs/app-design-spec.md must state that version 1 is local-only" \
+  "restore the local-only invariant in docs/app-design-spec.md before changing any design or implementation docs" \
+  "docs/app-design-spec.md"
+
+check_contains "$APP_SPEC" "Invariant: Do not introduce sync, shared backend, or cross-device collaboration unless scope changes explicitly." \
+  "docs/app-design-spec.md must forbid sync/shared backend assumptions in v1" \
+  "restore the v1 anti-sync invariant so later code checks can rely on a stable policy" \
+  "docs/app-design-spec.md"
+
+check_contains "$APP_SPEC" "Invariant: Worker, coordinator, and project manager are record fields, not app permission roles." \
+  "docs/app-design-spec.md must state that worker/coordinator/project_manager are record fields only" \
+  "restore the record-field invariant and avoid reintroducing shared-role assumptions" \
+  "docs/app-design-spec.md"
+
+check_contains "$APP_SPEC" "Invariant: Meeting records remain separate from task records." \
+  "docs/app-design-spec.md must state that meetings remain separate from tasks" \
+  "restore the meeting/task separation invariant before updating capture or task docs" \
+  "docs/app-design-spec.md"
+
+check_contains "$APP_SPEC" "Invariant: AI extraction creates reviewable candidates, not auto-final records." \
+  "docs/app-design-spec.md must state that AI extraction creates candidates, not final records" \
+  "restore the AI review-gate invariant so extraction remains reviewable by design" \
+  "docs/app-design-spec.md"
+
+check_contains "$APP_SPEC" "Invariant: Canonical exchange format is a versioned JSON bundle with attachment manifest and checksums." \
+  "docs/app-design-spec.md must define the canonical import/export format" \
+  "restore the canonical bundle invariant and keep CSV or PDF as secondary outputs only" \
+  "docs/app-design-spec.md"
+
+check_contains "$MEETING_DOC" "The app should not auto-convert every meeting into tasks." \
+  "docs/meeting-capture-design.md must explicitly forbid auto-converting meetings into tasks" \
+  "add explicit wording that meetings emit reviewable task candidates instead of final tasks" \
+  "docs/meeting-capture-design.md"
+
+echo "OK: design constraints are present"

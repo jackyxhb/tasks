@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+CONTRACT_PATH=${1:-$ROOT_DIR/examples/agent-task-contract.json}
+
+if [ ! -f "$CONTRACT_PATH" ]; then
+  echo "ERROR: missing task contract: $CONTRACT_PATH"
+  echo "  -> remediation: create a JSON task contract or point this command at an existing one"
+  echo "  -> see: docs/agent-task-contract.md"
+  exit 1
+fi
+
+python3 "$ROOT_DIR/scripts/validate_task_contract.py" "$CONTRACT_PATH"

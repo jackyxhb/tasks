@@ -1,0 +1,103 @@
+# AGENTS.md
+
+This repo is the harness for the personal field work agent app. If an agent produces the wrong plan, the harness must be tightened so the same failure becomes harder or impossible to repeat.
+
+## Failure Ledger
+
+```yaml
+- rule: docs/ is the canonical source of truth for the app design; legacy root notes must not be treated as requirements.
+  context: Planning drift happened on 2026-03-09 when ARCHIVE_FORMAT.md and WORK_HOURS_RECORD_FORMAT.md were initially treated as app constraints even after the user said they were unrelated.
+  consequence: The app model was pulled toward the wrong archive format.
+  fix: Use docs/app-design-spec.md and linked docs/* plans as the design source. Treat ARCHIVE_FORMAT.md and WORK_HOURS_RECORD_FORMAT.md as legacy-only unless explicitly replaced.
+
+- rule: Worker, coordinator, and project manager are record fields, not application permission roles.
+  context: Role-model confusion happened on 2026-03-09 when the plan initially described multi-user role workflows for the app.
+  consequence: The architecture drifted toward a shared system instead of a personal local agent.
+  fix: The only operator in v1 is the agentee. Store worker/coordinator/project_manager only as data fields on project, task, and meeting records.
+
+- rule: Version 1 is local-only; do not introduce sync, shared backend, or cross-device collaboration unless the user explicitly changes scope.
+  context: Sync assumptions appeared on 2026-03-09 before the user clarified that all data must remain local and only LLM access may use the internet.
+  consequence: Unnecessary backend and conflict-resolution complexity entered the design.
+  fix: Use SQLite plus local file storage as the only source of truth. Sharing happens through import/export bundles only.
+
+- rule: Meeting records must remain separate from task records.
+  context: Planning pressure on 2026-03-09 exposed the risk that meetings could be flattened directly into tasks.
+  consequence: Multi-project discussions, decisions, and unresolved questions would be lost or duplicated as noisy tasks.
+  fix: Model Meeting as a separate entity that can emit task candidates, project links, and decisions, all subject to review.
+
+- rule: AI extraction output must create reviewable candidates, not auto-final records.
+  context: Meeting transcription design on 2026-03-09 showed that mixed-language audio and repeated action items make silent automation unsafe.
+  consequence: Wrong project links, wrong assignees, and duplicate tasks become likely.
+  fix: Preserve raw source, require structured JSON output, validate locally, and force review when confidence is low or ambiguity exists.
+
+- rule: Import/export is the exchange mechanism in v1; CSV and PDF are secondary outputs, not canonical re-import formats.
+  context: The user clarified on 2026-03-09 that people exchange information between separate local installs rather than syncing live state.
+  consequence: Without a canonical bundle format, exchange becomes lossy and hard to merge.
+  fix: Use versioned JSON bundles plus attachment manifests and checksums for portable exchange.
+
+- rule: Non-trivial autonomous runs must start from a machine-readable task contract.
+  context: On 2026-03-09 the repo could validate global design constraints, but an agent still needed the user to restate task scope, success checks, and approval edges for each substantial run.
+  consequence: Autonomous runs can overshoot scope, stop for avoidable clarification, or miss required verification.
+  fix: Define a JSON task contract and validate it with bin/check-task-contract before major autonomous work.
+```
+
+## Available Tools
+
+- `bin/check-docs` - Validate required app design docs exist and are linked from docs/app-design-spec.md.
+- `bin/check-constraints` - Validate design invariants for local-only v1, meeting/task separation, AI review gating, and canonical import/export format.
+- `bin/check-gc` - Detect stale planning docs, unlinked focused docs, and legacy root docs that lost their tombstone markers.
+- `bin/check-local-only-code` - Detect code patterns that would introduce non-local storage or sync assumptions in v1.
+- `bin/check-meeting-review-gate` - Detect missing meeting review-gate signals or suspicious direct final-task promotion patterns.
+- `bin/check-bundle-schema` - Validate the canonical import/export schema and sample bundle.
+- `bin/check-implementation-constraints` - Run all implementation-aware constraint checks together.
+- `bin/check-task-contract [path]` - Validate a machine-readable task contract for autonomous runs.
+- `bin/check-harness` - Run the lightweight harness checks for this repo.
+- `make smoke` - Run the fastest repo smoke checks.
+- `make check` - Run lint-like and type-like harness verification commands.
+- `make task-contract CONTRACT=<path>` - Validate the current task contract before an autonomous run.
+- `make audit` - Run the harness audit entrypoint.
+- `make ci` - Run the full local harness pipeline.
+- `python3 scripts/harness_wizard.py status .` - Show harness artifact coverage.
+- `python3 scripts/harness_wizard.py audit .` - Audit harness readiness and fail on missing artifacts.
+- `python3 scripts/validate_task_contract.py <contract.json>` - Validate task-contract structure directly.
+- `find`, `grep`, `sed`, `awk` - Preferred built-in shell tools for this repo because ripgrep is not available in the current environment.
+
+## Do Not Use
+
+- Do not treat ARCHIVE_FORMAT.md as the app schema source.
+- Do not treat WORK_HOURS_RECORD_FORMAT.md as the app schema source.
+- Do not add backend, sync, or multi-user auth plans to v1 unless the user explicitly asks.
+- Do not auto-create final tasks directly from meeting extraction.
+- Do not use destructive cleanup commands such as `rm -rf` in this repo.
+
+## Repo Rules
+
+- `docs/` is the canonical source of truth for the app design.
+- `docs/app-design-spec.md` must link to every focused planning document under `docs/`.
+- If a new planning document changes the source of truth, update `docs/app-design-spec.md` in the same change.
+- Non-trivial autonomous runs should start from a validated task contract that defines scope, verification commands, and stop conditions.
+- If a new failure pattern is discovered, add it here as a failure-ledger entry, not as generic advice.
+
+## Harness Commands
+
+- `make smoke` must stay cheap and deterministic.
+- `make check` must run fast-fail harness verification before any longer workflow exists.
+- `make ci` must remain the canonical single-command validation entrypoint.
+- Repo-local wrapper scripts under `scripts/harness/` are preferred over ad-hoc manual command sequences.
+
+## Execution Plans
+
+- Use [PLANS.md](/Users/macbook1/work/Asoon/tasks/PLANS.md) for multi-step work where durable context matters.
+- Record objective, constraints, current command surface, and checkpoints before major implementation starts.
+- Keep plans aligned with the canonical docs under `docs/`.
+
+## Enforcement
+
+- Run `bin/check-docs` after changing design docs.
+- Run `bin/check-constraints` after changing design assumptions or planning docs.
+- Run `bin/check-gc` when cleaning planning artifacts or after adding new focused docs.
+- Run `bin/check-implementation-constraints` after changing future implementation code or import/export contracts.
+- Run `bin/check-task-contract <path>` before substantial autonomous work when a task-specific contract exists.
+- Run `bin/check-harness` after changing harness files.
+- Run `python3 scripts/harness_wizard.py audit .` after changing core harness artifacts.
+- If a rule here matters and is not checkable yet, add a follow-up check or document the gap in docs/harness-assessment.md.

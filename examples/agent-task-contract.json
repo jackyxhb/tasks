@@ -1,0 +1,55 @@
+{
+  "task_id": "harness-autonomy-2026-03-09",
+  "objective": "Tighten the repo harness so an agent can run substantial changes without repeated manual clarification.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "AGENTS.md",
+      "Makefile.harness",
+      "bin",
+      "docs",
+      "examples",
+      "schemas",
+      "scripts"
+    ],
+    "forbidden_paths": [
+      "ARCHIVE_FORMAT.md",
+      "WORK_HOURS_RECORD_FORMAT.md",
+      "mobile/field_work_agent/lib"
+    ],
+    "max_files_to_edit": 16
+  },
+  "required_commands": [
+    "make ci",
+    "make audit",
+    "make task-contract CONTRACT=examples/agent-task-contract.json"
+  ],
+  "success_criteria": [
+    "A machine-readable task contract schema, validator, and example exist.",
+    "The stable command surface includes task-contract and audit entrypoints.",
+    "Harness checks emit remediation guidance instead of bare failures.",
+    "All required repo-local validation commands pass."
+  ],
+  "stop_conditions": [
+    "The requested work conflicts with AGENTS.md failure-ledger rules.",
+    "The task requires deleting user-authored files or changing v1 scope.",
+    "A failing check cannot be resolved without introducing a new policy decision."
+  ],
+  "approval_gates": [
+    "Deleting user-authored files",
+    "Changing v1 local-only scope",
+    "Publishing artifacts outside the repository"
+  ],
+  "deliverables": [
+    "Task contract doc",
+    "Task contract schema",
+    "Task contract validator",
+    "Stable harness targets",
+    "Teaching failure output"
+  ],
+  "notes": [
+    "Use docs/app-design-spec.md as the canonical design source.",
+    "Keep meetings separate from final tasks and preserve the review gate."
+  ]
+}

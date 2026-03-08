@@ -1,0 +1,58 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+DOCS_DIR="$ROOT_DIR/docs"
+APP_SPEC="$DOCS_DIR/app-design-spec.md"
+
+fail() {
+  message=$1
+  remediation=$2
+  reference=$3
+  echo "ERROR: $message"
+  echo "  -> remediation: $remediation"
+  echo "  -> see: $reference"
+  exit 1
+}
+
+check_legacy_tombstone_or_absent() {
+  file=$1
+  marker=$2
+  if [ ! -e "$file" ]; then
+    echo "[ok]      legacy file removed: $file"
+    return
+  fi
+  if ! grep -Fq "$marker" "$file"; then
+    fail \
+      "$file lost its legacy tombstone marker: $marker" \
+      "restore the legacy-only marker or remove the file entirely if it is no longer needed" \
+      "AGENTS.md"
+  fi
+  if ! grep -Fq "docs/app-design-spec.md" "$file"; then
+    fail \
+      "$file must redirect readers to docs/app-design-spec.md" \
+      "restore the redirect so agents do not treat the legacy root document as canonical requirements" \
+      "docs/app-design-spec.md"
+  fi
+}
+
+check_legacy_tombstone_or_absent "$ROOT_DIR/ARCHIVE_FORMAT.md" "# LEGACY-ONLY: ARCHIVE_FORMAT.md"
+check_legacy_tombstone_or_absent "$ROOT_DIR/WORK_HOURS_RECORD_FORMAT.md" "# LEGACY-ONLY: WORK_HOURS_RECORD_FORMAT.md"
+
+find "$DOCS_DIR" -type f -name '*.md' | while IFS= read -r file; do
+  base=$(basename "$file")
+  case "$base" in
+    app-design-spec.md|harness-assessment.md)
+      continue
+      ;;
+  esac
+
+  if ! grep -Fq "$base" "$APP_SPEC"; then
+    fail \
+      "focused doc $base is not linked from docs/app-design-spec.md" \
+      "add the document to the Detailed References section in docs/app-design-spec.md in the same change" \
+      "docs/app-design-spec.md"
+  fi
+done
+
+echo "OK: GC checks passed"

@@ -1,0 +1,29 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+SCHEMA_FILE="$ROOT_DIR/schemas/import-export-bundle.schema.json"
+SAMPLE_FILE="$ROOT_DIR/examples/import-export/sample-bundle.json"
+
+python3 - <<'PY' "$SCHEMA_FILE"
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+try:
+    json.loads(path.read_text())
+except FileNotFoundError:
+    print(f"ERROR: missing schema file: {path}", file=sys.stderr)
+    print("  -> remediation: restore the canonical bundle schema before changing import/export code", file=sys.stderr)
+    print("  -> see: docs/implementation-constraints.md", file=sys.stderr)
+    raise SystemExit(1)
+except json.JSONDecodeError as exc:
+    print(f"ERROR: invalid schema JSON in {path}: {exc}", file=sys.stderr)
+    print("  -> remediation: fix the schema JSON so bundle validation remains deterministic", file=sys.stderr)
+    print("  -> see: schemas/import-export-bundle.schema.json", file=sys.stderr)
+    raise SystemExit(1)
+print(f"OK: schema JSON parses: {path}")
+PY
+
+python3 "$ROOT_DIR/scripts/validate_bundle.py" "$SAMPLE_FILE"

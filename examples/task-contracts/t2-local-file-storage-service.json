@@ -1,0 +1,56 @@
+{
+  "task_id": "T2-local-file-storage-service",
+  "objective": "Implement the local file storage service for the mobile app, including deterministic folder creation, safe persisted file references, and checksum helpers for attachments and bundles.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/bootstrap",
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/test",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/features",
+      "mobile/field_work_agent/lib/app",
+      "mobile/field_work_agent/lib/data/database"
+    ],
+    "max_files_to_edit": 8
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t2-local-file-storage-service.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "A local file storage service creates and resolves the expected local folders for audio, attachments, exports, imports, reports, and temp files.",
+    "File references can be persisted as relative paths and resolved safely under one storage root.",
+    "A deterministic checksum helper exists for attachments and bundles.",
+    "The work remains local-only and does not introduce sync or hosted storage behavior."
+  ],
+  "stop_conditions": [
+    "The task requires external storage or sync APIs.",
+    "The task requires editing database, feature, or docs paths outside the allowed scope.",
+    "The implementation would require a third-party hashing or storage package just to satisfy the acceptance criteria."
+  ],
+  "approval_gates": [
+    "Adding cloud or shared storage behavior",
+    "Expanding scope beyond T2 local file storage",
+    "Changing canonical architecture docs instead of implementing within the allowed code paths"
+  ],
+  "deliverables": [
+    "Storage bootstrap",
+    "Local storage directory service",
+    "Persistable file reference helper",
+    "Deterministic checksum helper"
+  ],
+  "notes": [
+    "Ticket source: docs/implementation-tickets.md T2 Create local file storage service.",
+    "Design source: docs/technical-architecture-plan.md local folder layout.",
+    "Relative persisted paths should remain rooted under one local storage base directory."
+  ]
+}

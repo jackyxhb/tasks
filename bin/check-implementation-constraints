@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+
+run_check() {
+	script=$1
+	purpose=$2
+	if ! "$ROOT_DIR/bin/$script"; then
+		echo "  -> remediation: fix the failing implementation constraint before continuing; this gate protects $purpose"
+		echo "  -> see: docs/implementation-constraints.md"
+		exit 1
+	fi
+}
+
+run_check check-local-only-code "local-only storage boundaries"
+run_check check-meeting-review-gate "meeting review before task promotion"
+run_check check-bundle-schema "canonical import/export bundle integrity"
+
+echo "OK: implementation-aware constraints passed"

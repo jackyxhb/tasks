@@ -1,0 +1,44 @@
+{
+  "schema_version": "v1",
+  "bundle_id": "bundle-2026-03-09-001",
+  "exported_at": "2026-03-09T09:00:00Z",
+  "source_app": {
+    "name": "personal-field-work-agent",
+    "version": "0.1.0"
+  },
+  "scope": {
+    "type": "project",
+    "value": "Pompallier Ponsonby"
+  },
+  "records": {
+    "projects": [
+      {
+        "id": "proj_001",
+        "project_name": "Pompallier Ponsonby",
+        "client_oem": "OTIS",
+        "site_location": "302 Ponsonby Road, Ponsonby, Auckland 1011"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "task_001",
+        "project_id": "proj_001",
+        "task_type": "installation",
+        "task_title": "On-site training support for Lin Yong",
+        "scheduled_date": "2026-03-09",
+        "start_time_local": "07:30",
+        "agentee_name": "example-agentee"
+      }
+    ],
+    "meetings": [],
+    "people": [
+      {
+        "id": "person_001",
+        "name": "Lin Yong",
+        "phone": "+64 29 777 7020",
+        "role_hint": "worker"
+      }
+    ]
+  },
+  "attachments_manifest": []
+}

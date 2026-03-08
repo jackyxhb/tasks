@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+
+if [ ! -f "$ROOT_DIR/AGENTS.md" ]; then
+  echo "ERROR: missing AGENTS.md"
+  exit 1
+fi
+
+if ! grep -q "docs/ is the canonical source of truth" "$ROOT_DIR/AGENTS.md"; then
+  echo "ERROR: AGENTS.md is missing the docs canonical-source rule"
+  exit 1
+fi
+
+if ! grep -q "Version 1 is local-only" "$ROOT_DIR/AGENTS.md"; then
+  echo "ERROR: AGENTS.md is missing the local-only v1 rule"
+  exit 1
+fi
+
+"$ROOT_DIR/bin/check-docs"
+"$ROOT_DIR/bin/check-constraints"
+"$ROOT_DIR/bin/check-gc"
+
+echo "OK: harness checks passed"

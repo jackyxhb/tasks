@@ -1,0 +1,63 @@
+{
+  "task_id": "T1-local-database-foundation",
+  "objective": "Implement the first local database foundation for the mobile app, including schema, incremental migrations, and repository-layer support for the core record types.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/pubspec.yaml",
+      "mobile/field_work_agent/analysis_options.yaml",
+      "mobile/field_work_agent/lib/bootstrap",
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/lib/data/database",
+      "mobile/field_work_agent/lib/data",
+      "mobile/field_work_agent/lib/domain/entities",
+      "mobile/field_work_agent/lib/domain/enums",
+      "mobile/field_work_agent/test"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "examples/import-export",
+      "mobile/field_work_agent/lib/features",
+      "mobile/field_work_agent/lib/app"
+    ],
+    "max_files_to_edit": 14
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t1-local-database-foundation.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "The mobile app has a local database foundation under mobile/field_work_agent/lib/data/database.",
+    "A schema version table exists in the database foundation.",
+    "Migrations are structured for incremental execution instead of one-shot schema creation.",
+    "Repository-layer support exists for projects, tasks, meetings, raw captures, and audit logs.",
+    "The work preserves local-only storage and does not introduce sync or hosted-backend assumptions."
+  ],
+  "stop_conditions": [
+    "The task requires selecting or changing a persistence package strategy that is not already implied by the app package setup.",
+    "The task cannot be completed without editing paths outside the allowed scope.",
+    "The implementation would require introducing sync, shared backend, or cross-device storage behavior.",
+    "The task needs a new verification command that is not yet part of the repo harness."
+  ],
+  "approval_gates": [
+    "Adding or replacing major persistence dependencies",
+    "Expanding scope beyond T1 database foundation",
+    "Changing canonical product or architecture docs instead of implementing within the allowed code paths"
+  ],
+  "deliverables": [
+    "Database bootstrap wiring",
+    "Schema and migration foundation",
+    "Repository-layer foundation for core records",
+    "Tests or validation hooks that fit the current harness"
+  ],
+  "notes": [
+    "Ticket source: docs/implementation-tickets.md T1 Create local database foundation.",
+    "Design source: docs/database-schema-plan.md and docs/technical-architecture-plan.md.",
+    "Meeting and task separation must remain intact even at the repository layer."
+  ]
+}

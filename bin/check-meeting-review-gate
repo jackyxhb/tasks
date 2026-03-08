@@ -1,0 +1,86 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+
+fail() {
+  message=$1
+  remediation=$2
+  reference=$3
+  echo "ERROR: $message"
+  echo "  -> remediation: $remediation"
+  echo "  -> see: $reference"
+  exit 1
+}
+
+CODE_DIRS=""
+for dir in src app lib mobile packages; do
+  if [ -d "$ROOT_DIR/$dir" ]; then
+    CODE_DIRS="$CODE_DIRS $ROOT_DIR/$dir"
+  fi
+done
+
+if [ -z "$CODE_DIRS" ]; then
+  echo "OK: no implementation code detected yet; meeting review gate check is armed for future code"
+  exit 0
+fi
+
+if ! grep -RInE \
+  --include='*.js' \
+  --include='*.ts' \
+  --include='*.tsx' \
+  --include='*.jsx' \
+  --include='*.swift' \
+  --include='*.kt' \
+  --include='*.kts' \
+  --include='*.py' \
+  --include='*.java' \
+  --include='*.rb' \
+  --include='*.go' \
+  --include='*.rs' \
+  --include='*.dart' \
+  'review_required|needs_review|task_candidate' $CODE_DIRS >/dev/null 2>&1; then
+  fail \
+    "implementation code does not expose a meeting review-gate concept such as review_required, needs_review, or task_candidate" \
+    "introduce an explicit candidate or review-required state before any task can be finalized from meeting extraction" \
+    "docs/implementation-constraints.md"
+fi
+
+FORBIDDEN='meeting.*create.*final.*task|extract.*final.*task|auto.*create.*task.*meeting|meeting.*status.*final.*task'
+if grep -RInE \
+  --include='*.js' \
+  --include='*.ts' \
+  --include='*.tsx' \
+  --include='*.jsx' \
+  --include='*.swift' \
+  --include='*.kt' \
+  --include='*.kts' \
+  --include='*.py' \
+  --include='*.java' \
+  --include='*.rb' \
+  --include='*.go' \
+  --include='*.rs' \
+  --include='*.dart' \
+  "$FORBIDDEN" $CODE_DIRS >/dev/null 2>&1; then
+  echo "ERROR: found patterns suggesting direct final-task promotion from meeting extraction"
+  echo "  -> remediation: replace the direct finalize flow with a candidate lifecycle and explicit user promotion"
+  echo "  -> see: docs/implementation-constraints.md"
+  grep -RInE \
+    --include='*.js' \
+    --include='*.ts' \
+    --include='*.tsx' \
+    --include='*.jsx' \
+    --include='*.swift' \
+    --include='*.kt' \
+    --include='*.kts' \
+    --include='*.py' \
+    --include='*.java' \
+    --include='*.rb' \
+    --include='*.go' \
+    --include='*.rs' \
+    --include='*.dart' \
+    "$FORBIDDEN" $CODE_DIRS
+  exit 1
+fi
+
+echo "OK: meeting review-gate signals are present and no direct final-task promotion patterns were found"

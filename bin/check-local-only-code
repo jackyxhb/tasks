@@ -1,0 +1,66 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+
+fail() {
+  message=$1
+  remediation=$2
+  reference=$3
+  echo "ERROR: $message"
+  echo "  -> remediation: $remediation"
+  echo "  -> see: $reference"
+  exit 1
+}
+
+CODE_DIRS=""
+for dir in src app lib mobile packages; do
+  if [ -d "$ROOT_DIR/$dir" ]; then
+    CODE_DIRS="$CODE_DIRS $ROOT_DIR/$dir"
+  fi
+done
+
+if [ -z "$CODE_DIRS" ]; then
+  echo "OK: no implementation code detected yet; local-only code check is armed for future code"
+  exit 0
+fi
+
+PATTERN='firebase|supabase|appsync|cloudkit|socket\.io|websocket|pusher|replication|replicat(e|ion)|sync engine|shared backend|postgres://|mysql://|mongodb://|mongodb\+srv://'
+
+if grep -RInE \
+  --include='*.js' \
+  --include='*.ts' \
+  --include='*.tsx' \
+  --include='*.jsx' \
+  --include='*.swift' \
+  --include='*.kt' \
+  --include='*.kts' \
+  --include='*.py' \
+  --include='*.java' \
+  --include='*.rb' \
+  --include='*.go' \
+  --include='*.rs' \
+  --include='*.dart' \
+  "$PATTERN" $CODE_DIRS >/dev/null 2>&1; then
+  echo "ERROR: found code patterns that suggest non-local storage or sync assumptions in v1"
+  echo "  -> remediation: remove the sync or hosted-backend dependency and route persistence through local storage only"
+  echo "  -> see: docs/implementation-constraints.md"
+  grep -RInE \
+    --include='*.js' \
+    --include='*.ts' \
+    --include='*.tsx' \
+    --include='*.jsx' \
+    --include='*.swift' \
+    --include='*.kt' \
+    --include='*.kts' \
+    --include='*.py' \
+    --include='*.java' \
+    --include='*.rb' \
+    --include='*.go' \
+    --include='*.rs' \
+    --include='*.dart' \
+    "$PATTERN" $CODE_DIRS
+  exit 1
+fi
+
+echo "OK: no forbidden local-only drift patterns detected in implementation code"

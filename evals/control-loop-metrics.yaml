@@ -1,0 +1,29 @@
+version: 1
+setpoints:
+  canonical_docs_integrity:
+    target: 1.0
+    alert_below: 1.0
+  harness_audit_pass_rate:
+    target: 1.0
+    alert_below: 1.0
+  stale_doc_link_failures:
+    target: 0
+    alert_above: 0
+  scope_drift_failures:
+    target: 0
+    alert_above: 0
+  time_to_actionable_failure_minutes:
+    target: 10
+    alert_above: 30
+
+measurements:
+  - name: canonical_docs_integrity
+    source: harness
+  - name: harness_audit_pass_rate
+    source: harness
+  - name: stale_doc_link_failures
+    source: gc
+  - name: scope_drift_failures
+    source: constraints
+  - name: time_to_actionable_failure_minutes
+    source: harness

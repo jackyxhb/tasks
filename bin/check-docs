@@ -1,0 +1,66 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+DOCS_DIR="$ROOT_DIR/docs"
+APP_SPEC="$DOCS_DIR/app-design-spec.md"
+
+fail() {
+  message=$1
+  remediation=$2
+  reference=$3
+  echo "ERROR: $message"
+  echo "  -> remediation: $remediation"
+  echo "  -> see: $reference"
+  exit 1
+}
+
+required_files="
+$DOCS_DIR/database-schema-plan.md
+$DOCS_DIR/ux-screen-plan.md
+$DOCS_DIR/technical-architecture-plan.md
+$DOCS_DIR/meeting-capture-design.md
+$DOCS_DIR/meeting-transcription-json-contract.md
+$DOCS_DIR/meeting-review-state-machine.md
+$DOCS_DIR/implementation-tickets.md
+"
+
+if [ ! -f "$APP_SPEC" ]; then
+  fail \
+    "missing docs/app-design-spec.md" \
+    "restore docs/app-design-spec.md and keep it as the canonical index for focused planning docs" \
+    "docs/app-design-spec.md"
+fi
+
+missing=0
+for file in $required_files; do
+  if [ ! -f "$file" ]; then
+    echo "ERROR: missing required doc: $file"
+    echo "  -> remediation: restore the document and add a link to it from docs/app-design-spec.md"
+    echo "  -> see: docs/app-design-spec.md"
+    missing=1
+  fi
+done
+
+if [ "$missing" -ne 0 ]; then
+  exit 1
+fi
+
+for name in \
+  database-schema-plan.md \
+  ux-screen-plan.md \
+  technical-architecture-plan.md \
+  meeting-capture-design.md \
+  meeting-transcription-json-contract.md \
+  meeting-review-state-machine.md \
+  implementation-tickets.md
+do
+  if ! grep -q "$name" "$APP_SPEC"; then
+    fail \
+      "docs/app-design-spec.md does not link to $name" \
+      "add the focused document to the Detailed References section in docs/app-design-spec.md" \
+      "docs/app-design-spec.md"
+  fi
+done
+
+echo "OK: required docs exist and are linked from docs/app-design-spec.md"

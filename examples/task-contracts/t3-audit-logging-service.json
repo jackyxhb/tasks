@@ -1,0 +1,51 @@
+{
+  "task_id": "T3-audit-logging-service",
+  "objective": "Implement the audit logging service so create, update, merge, AI extract, import, export, finalize, and related state-changing events can be recorded consistently.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/bootstrap",
+      "mobile/field_work_agent/lib/core",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/features",
+      "mobile/field_work_agent/lib/data/database"
+    ],
+    "max_files_to_edit": 6
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t3-audit-logging-service.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "A shared audit logging service exists for critical record mutations.",
+    "Create, update, merge, AI extract, import, export, finalize, reopen, and archive events can be logged through explicit service methods.",
+    "Before and after states can be persisted in a JSON-safe form.",
+    "The implementation remains local-only and builds on the existing audit log repository."
+  ],
+  "stop_conditions": [
+    "The task requires editing feature modules or database schema outside the allowed scope.",
+    "The task requires introducing remote logging, telemetry backends, or networked observability."
+  ],
+  "approval_gates": [
+    "Adding remote logging or analytics behavior",
+    "Expanding scope beyond T3 audit logging service"
+  ],
+  "deliverables": [
+    "Audit action types",
+    "Audit logging service",
+    "Audit service bootstrap"
+  ],
+  "notes": [
+    "Ticket source: docs/implementation-tickets.md T3 Create audit logging service.",
+    "Design source: docs/technical-architecture-plan.md AuditService responsibilities.",
+    "The service should wrap the existing audit log repository instead of bypassing it."
+  ]
+}
