@@ -1,0 +1,52 @@
+{
+  "task_id": "T15-T16-meeting-review-and-candidate-resolution",
+  "objective": "Implement the meeting review workflow and task candidate resolution flow so extracted meeting candidates can be reviewed, edited, accepted, merged, rejected, or saved as provisional tasks with durable local state.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/data/database",
+      "mobile/field_work_agent/lib/domain",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app"
+    ],
+    "max_files_to_edit": 16
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t15-t16-meeting-review-and-candidate-resolution.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Meeting review data needed for candidate task review is persisted locally instead of existing only in transient extraction results.",
+    "Task candidate substates are durably tracked and can link to created or merged tasks.",
+    "The implementation supports candidate acceptance as new task, merge into existing task, save as provisional task, and rejection.",
+    "A meeting review presentation/controller layer exists for transcript, summary, minutes, projects, and candidate task review without bypassing the review gate."
+  ],
+  "stop_conditions": [
+    "The task requires full app-shell navigation or platform UI bootstrapping outside the current library package.",
+    "The task requires automatic final-task promotion without explicit review actions.",
+    "The task requires remote services or sync behavior."
+  ],
+  "approval_gates": [
+    "Introducing automatic task promotion from extraction output",
+    "Expanding scope into broad app-shell navigation instead of the meeting review workflow"
+  ],
+  "deliverables": [
+    "Persistent meeting task candidate storage",
+    "Meeting review edit workflow",
+    "Task candidate resolution service",
+    "Meeting review presentation models"
+  ],
+  "notes": [
+    "Continue after T13-T14.",
+    "Prefer pure-Dart presentation/controller code because this repo currently exposes library code without visible Flutter app-shell scaffolding.",
+    "Keep review gating explicit and local-only."
+  ]
+}

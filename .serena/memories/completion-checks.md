@@ -1,0 +1,4 @@
+- After edits, run get_errors on touched Dart files.
+- Validate any new autonomous slice with make task-contract CONTRACT=<json> when a task contract is involved.
+- Run make ci and make audit from the repo root before closing the task.
+- For Flutter shell changes, run focused flutter test commands inside mobile/field_work_agent when practical.

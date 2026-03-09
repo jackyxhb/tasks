@@ -10,15 +10,17 @@ Use this file for multi-step work where durable context matters.
 
 ## Constraints
 
-- Runtime/tooling constraints: This repo currently contains planning and harness artifacts only. Prefer shell, Markdown, and deterministic repo-local checks.
+- Runtime/tooling constraints: This repo now contains planning artifacts, harness checks, and an in-progress mobile app under `mobile/field_work_agent/`. Deterministic repo-local checks remain preferred, and Flutter-dependent work should declare SDK/toolchain preflight explicitly.
 - Security/compliance constraints: All app data in v1 is local-only; internet use is limited to optional LLM transcription or extraction.
 - Performance/reliability constraints: Harness checks should stay fast enough for agent feedback loops.
 
 ## Context Snapshot
 
-- Relevant files/modules: `AGENTS.md`, `docs/app-design-spec.md`, linked docs under `docs/`, `bin/check-*`, `scripts/harness/*`
+- Relevant files/modules: `AGENTS.md`, `docs/app-design-spec.md`, linked docs under `docs/`, `bin/check-*`, `scripts/harness/*`, `mobile/field_work_agent/`
 - Existing commands/workflows: `make smoke`, `make check`, `make ci`, `python3 scripts/harness_wizard.py audit .`
 - Known risks: legacy root docs competing with canonical docs, role-model drift, sync assumptions, meeting/task boundary regressions, AI over-automation.
+- Implemented app slices as of 2026-03-09: T1-T12 application-layer foundations including local database bootstrap, local file storage, audit logging, project/task CRUD flows, people normalization, raw capture intake/classification, dedup candidates, meeting recording flow, and transcript storage plus provider abstraction.
+- Immediate continuation target: keep implementation and harness metadata aligned as the mobile app grows.
 
 ## Execution Plan
 
@@ -39,6 +41,8 @@ Use this file for multi-step work where durable context matters.
 - [x] Static checks passed
 - [ ] Tests passed
 - [x] Docs updated
+- [x] Foundation slices T1-T12 implemented at application-layer scope
+- [ ] Meeting extraction/review slices T13-T16 implemented
 
 ## Decision Log
 
@@ -56,4 +60,4 @@ Use this file for multi-step work where durable context matters.
 
 - Commands run: `make smoke`, `make check`, `make ci`, `python3 scripts/harness_wizard.py audit .`
 - Key outputs: harness commands and docs checks pass.
-- Follow-up tasks: add implementation-aware structural checks once app code exists.
+- Follow-up tasks: continue with T13-T14 using the next task contract under `examples/task-contracts/` and keep the no-wait autonomous flow unless a real approval boundary appears.

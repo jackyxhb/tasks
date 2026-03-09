@@ -1,0 +1,52 @@
+{
+  "task_id": "T26-T27-import-export-flow",
+  "objective": "Implement export bundle creation and import preview/apply flow so local records can be exchanged through the canonical versioned JSON bundle with checksums and explicit local merge behavior.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/lib/data/database",
+      "mobile/field_work_agent/lib/domain",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app"
+    ],
+    "max_files_to_edit": 20
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t26-t27-import-export-flow.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Export bundle creation emits canonical versioned JSON with scope, records, and attachment manifest.",
+    "Export bundle files are written under local export storage and tracked in the exports table with checksums.",
+    "Import preview validates bundle structure before write and records preview metadata locally.",
+    "Import apply performs explicit local upsert-style merge behavior and records import decisions in the imports table."
+  ],
+  "stop_conditions": [
+    "The task requires sync or remote backend behavior.",
+    "The task requires changing the canonical bundle schema in docs or schemas.",
+    "The task requires full UI flow work outside the current library package."
+  ],
+  "approval_gates": [
+    "Introducing live sync instead of local bundle exchange",
+    "Changing canonical bundle format instead of implementing against it"
+  ],
+  "deliverables": [
+    "Bundle validator",
+    "Export bundle creator service",
+    "Import preview and apply service",
+    "Import/export repositories"
+  ],
+  "notes": [
+    "Use the canonical schema under schemas/import-export-bundle.schema.json as the contract.",
+    "Prefer explicit local merge behavior over silent destructive replacement."
+  ]
+}

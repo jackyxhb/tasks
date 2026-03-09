@@ -1,0 +1,64 @@
+{
+  "task_id": "T17-T22-core-ux-screens",
+  "objective": "Implement the core Flutter UX screens and navigation shell for Home, Inbox, Projects, Tasks, Meetings, Search, Reports, Import, Export, Settings, and Archive using the local-first application services already present in the mobile package.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/pubspec.yaml",
+      "mobile/field_work_agent/lib/main.dart",
+      "mobile/field_work_agent/lib/src",
+      "mobile/field_work_agent/lib/features",
+      "mobile/field_work_agent/test",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/data/database/migrations"
+    ],
+    "max_files_to_edit": 24
+  },
+  "environment_prerequisites": [
+    "Flutter SDK is installed and available on PATH.",
+    "Dart is available through the Flutter installation.",
+    "The mobile package shell exists under mobile/field_work_agent/."
+  ],
+  "preflight_commands": [
+    "make mobile-preflight"
+  ],
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t17-t22-core-ux-screens.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "The Flutter app has a usable navigation shell that covers the primary screen groups from docs/ux-screen-plan.md.",
+    "Home, Inbox, Projects, Tasks, Meetings, Search, Reports, Import, Export, Settings, and Archive have concrete Flutter presentation surfaces instead of a single placeholder page.",
+    "The UI reads from local-first application services or presentation adapters and does not introduce sync or hosted backend assumptions.",
+    "Low-confidence and review-required states remain visible in the UI for inbox and meeting-driven flows.",
+    "The work stays within the existing local-only v1 product scope."
+  ],
+  "stop_conditions": [
+    "The Flutter toolchain preflight fails and the task would require runtime validation or generated platform runners.",
+    "The task requires changing canonical product docs instead of implementing against them.",
+    "The requested UI work requires a new design-system direction not already implied by docs/ux-screen-plan.md."
+  ],
+  "approval_gates": [
+    "Introducing a new UI framework or state-management package beyond what the package already uses.",
+    "Expanding scope into sync, shared backend, or multi-user behavior.",
+    "Adding platform-specific generated files outside the current mobile package shell."
+  ],
+  "deliverables": [
+    "Navigation shell",
+    "Core screen scaffolds",
+    "Presentation adapters for local application services",
+    "Basic widget coverage for the new shell"
+  ],
+  "notes": [
+    "Use the stable repo-local preflight command before treating Flutter runtime work as unblocked.",
+    "Prefer incremental screen implementation over a large one-shot UI rewrite."
+  ]
+}

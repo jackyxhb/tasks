@@ -13,17 +13,21 @@ class RawCaptureRepository {
     return executor.execute(
       'INSERT OR REPLACE INTO raw_captures ('
       'id, channel, raw_text, transcript_text, audio_file_path, '
+      'transcription_provider, transcription_model, transcription_error, '
       'attachment_group_id, capture_time, capture_timezone, '
       'captured_by_agentee_name, classification_type, '
       'classification_confidence, parse_status, parse_version, source_hash, '
       'created_at'
-      ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       <Object?>[
         capture.id,
         capture.channel.storageValue,
         capture.rawText,
         capture.transcriptText,
         capture.audioFilePath,
+        capture.transcriptionProvider,
+        capture.transcriptionModel,
+        capture.transcriptionError,
         capture.attachmentGroupId,
         capture.captureTime.toUtc().toIso8601String(),
         capture.captureTimezone,
@@ -64,6 +68,15 @@ class RawCaptureRepository {
       ),
       rawText: DatabaseValueCodec.stringOrNull(row['raw_text']),
       transcriptText: DatabaseValueCodec.stringOrNull(row['transcript_text']),
+      transcriptionProvider: DatabaseValueCodec.stringOrNull(
+        row['transcription_provider'],
+      ),
+      transcriptionModel: DatabaseValueCodec.stringOrNull(
+        row['transcription_model'],
+      ),
+      transcriptionError: DatabaseValueCodec.stringOrNull(
+        row['transcription_error'],
+      ),
       audioFilePath: DatabaseValueCodec.stringOrNull(row['audio_file_path']),
       attachmentGroupId: DatabaseValueCodec.stringOrNull(
         row['attachment_group_id'],

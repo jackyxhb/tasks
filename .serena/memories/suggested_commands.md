@@ -1,0 +1,7 @@
+- make mobile-preflight
+- make task-contract CONTRACT=examples/task-contracts/<task>.json
+- make ci
+- make audit
+- flutter test test/meeting_fallback_shell_test.dart test/smoke_test.dart  # from mobile/field_work_agent when touching shell UI
+- python3 scripts/harness_wizard.py audit .
+- Preferred shell tools on this machine/repo: find, grep, sed, awk.

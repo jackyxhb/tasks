@@ -1,0 +1,53 @@
+{
+  "task_id": "T23-T25-search-and-reports",
+  "objective": "Implement local full-text search, structured filtering, and deterministic report generation so the app can query records and produce reusable JSON and CSV outputs entirely from local data.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/lib/data/database",
+      "mobile/field_work_agent/lib/domain",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app"
+    ],
+    "max_files_to_edit": 18
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t23-t25-search-and-reports.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "FTS indices exist for projects, tasks, meetings, raw captures, and people and stay synchronized with source tables through local database triggers.",
+    "Search returns grouped local results with snippets and supports combining text search with structured filters where applicable.",
+    "Structured filters cover project, OEM, worker, coordinator, project manager, task type, date range, and status.",
+    "Daily task list, project summary, and meeting minutes pack reports can be generated locally and emitted as in-app data plus JSON and CSV files.",
+    "Report generation is tracked in report_runs without introducing any network dependency."
+  ],
+  "stop_conditions": [
+    "The task requires full PDF rendering or UI-shell work outside the current library package.",
+    "The task requires remote search infrastructure or hosted reporting.",
+    "The task requires changing canonical docs instead of implementing against them."
+  ],
+  "approval_gates": [
+    "Introducing remote search or analytics services",
+    "Expanding report generation into network-backed exports"
+  ],
+  "deliverables": [
+    "FTS migration with sync triggers",
+    "Search models and search service",
+    "Report run entity and repository",
+    "Report generation service"
+  ],
+  "notes": [
+    "Skip PDF generation for now; JSON and CSV are the required working outputs in this slice.",
+    "Keep everything deterministic and local-only."
+  ]
+}

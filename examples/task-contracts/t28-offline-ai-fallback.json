@@ -1,0 +1,57 @@
+{
+  "task_id": "T28-offline-ai-fallback",
+  "objective": "Implement offline-safe AI fallback behavior so meetings can continue through manual review when transcription or extraction is unavailable, while keeping pending AI states visible in the mobile shell.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/features/meetings/application",
+      "mobile/field_work_agent/lib/src",
+      "mobile/field_work_agent/test",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/data/database/migrations"
+    ],
+    "max_files_to_edit": 12
+  },
+  "environment_prerequisites": [
+    "Flutter SDK is installed and available on PATH.",
+    "The existing mobile package shell remains under mobile/field_work_agent/."
+  ],
+  "preflight_commands": [
+    "make mobile-preflight"
+  ],
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t28-offline-ai-fallback.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Meetings can be moved into a manual-review path without requiring successful AI transcription or extraction.",
+    "Manual fallback preserves local editing of transcript, summary, minutes, and project links.",
+    "Pending AI and failed AI states are visible in the mobile meeting experience.",
+    "The work stays local-only and does not add sync or hosted backend assumptions."
+  ],
+  "stop_conditions": [
+    "Flutter preflight fails and the task would require generated platform runners or runtime-only validation.",
+    "Completing the work would require changes to canonical product docs rather than implementation against them."
+  ],
+  "approval_gates": [
+    "Adding new packages beyond the current Flutter dependencies.",
+    "Expanding scope into remote AI orchestration, sync, or multi-user behavior."
+  ],
+  "deliverables": [
+    "Meeting manual fallback application service",
+    "Visible pending and failed AI states in the mobile meeting shell",
+    "Widget coverage for the fallback presentation"
+  ],
+  "notes": [
+    "Prefer reusing the existing review-state machine and editor behavior over introducing parallel status systems.",
+    "Use repo-level validation commands after the implementation is complete."
+  ]
+}

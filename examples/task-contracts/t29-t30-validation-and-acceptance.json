@@ -1,0 +1,58 @@
+{
+  "task_id": "T29-T30-validation-and-acceptance",
+  "objective": "Seed deterministic validation data from current repo examples and run end-to-end acceptance checks for capture, meeting review, exchange, search, and reporting in the mobile package.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "examples/task-contracts",
+      "examples/validation",
+      "mobile/field_work_agent/test"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/data/database/migrations"
+    ],
+    "max_files_to_edit": 12
+  },
+  "environment_prerequisites": [
+    "Flutter SDK is installed and available on PATH.",
+    "The mobile package can run flutter test locally.",
+    "The existing SQLite-backed app database remains local-only."
+  ],
+  "preflight_commands": [
+    "make mobile-preflight"
+  ],
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t29-t30-validation-and-acceptance.json",
+    "cd mobile/field_work_agent && flutter test test/acceptance_workflows_test.dart test/meeting_fallback_shell_test.dart test/smoke_test.dart",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Pompallier Ponsonby validation data is seeded from current repo examples in a deterministic fixture.",
+    "One sample meeting scenario is available for automated acceptance checks.",
+    "Acceptance coverage verifies text capture to final task, meeting audio to reviewed meeting and task candidates, export/import round-trip, and search/report behavior on created records.",
+    "The acceptance path stays local-only and does not add sync or hosted backend assumptions."
+  ],
+  "stop_conditions": [
+    "Flutter test cannot exercise the local SQLite/database path and the remaining work would require adding a new dependency just to run acceptance checks.",
+    "Completing the acceptance path would require changes to canonical product docs rather than implementation and test artifacts."
+  ],
+  "approval_gates": [
+    "Adding new runtime dependencies beyond what the mobile package already uses.",
+    "Expanding acceptance scope into remote AI providers or network-backed infrastructure."
+  ],
+  "deliverables": [
+    "Validation seed fixture",
+    "Reusable acceptance test harness",
+    "End-to-end acceptance tests for core local workflows"
+  ],
+  "notes": [
+    "Prefer driving real application services over duplicating logic in tests.",
+    "Keep the acceptance fixture anchored to TASKS.md, the meeting JSON contract examples, and the sample bundle values already in the repo."
+  ]
+}

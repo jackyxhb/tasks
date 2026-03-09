@@ -1,0 +1,49 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+APP_DIR="$ROOT_DIR/mobile/field_work_agent"
+
+fail() {
+  message=$1
+  remediation=$2
+  reference=$3
+  echo "ERROR: $message"
+  echo "  -> remediation: $remediation"
+  echo "  -> see: $reference"
+  exit 1
+}
+
+if [ ! -f "$APP_DIR/pubspec.yaml" ]; then
+  fail \
+    "missing Flutter package manifest at $APP_DIR/pubspec.yaml" \
+    "restore the mobile package shell before running Flutter-dependent work" \
+    "docs/flutter-project-structure.md"
+fi
+
+if ! command -v flutter >/dev/null 2>&1; then
+  fail \
+    "Flutter SDK is not available on PATH" \
+    "install Flutter, add it to PATH, and rerun this preflight before starting UI or platform-runner work" \
+    "docs/flutter-project-structure.md"
+fi
+
+if ! flutter --version >/dev/null 2>&1; then
+  fail \
+    "flutter --version failed" \
+    "repair the Flutter installation or PATH configuration, then rerun this preflight" \
+    "docs/flutter-project-structure.md"
+fi
+
+if flutter dart --version >/dev/null 2>&1; then
+  :
+elif command -v dart >/dev/null 2>&1 && dart --version >/dev/null 2>&1; then
+  :
+else
+  fail \
+    "Dart runtime is not available through Flutter or PATH" \
+    "repair the Flutter SDK installation so Dart is available to the mobile package" \
+    "docs/flutter-project-structure.md"
+fi
+
+echo "OK: Flutter mobile toolchain is available for $APP_DIR"

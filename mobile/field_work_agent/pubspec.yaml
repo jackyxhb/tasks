@@ -1,0 +1,27 @@
+name: field_work_agent
+description: Local-first personal field work agent app.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+  flutter: '>=3.22.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  path_provider: ^2.1.5
+  sqflite: ^2.4.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  sqflite_common_ffi: ^2.3.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/data/database/migrations/0001_initial.sql
+    - lib/data/database/migrations/0002_meeting_task_candidates.sql
+    - lib/data/database/migrations/0003_search_fts_and_triggers.sql

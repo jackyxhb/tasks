@@ -20,6 +20,16 @@
     ],
     "max_files_to_edit": 16
   },
+  "environment_prerequisites": [
+    "Python 3 is available for repo-local validation scripts.",
+    "Make is available for stable harness entrypoints.",
+    "If a task edits Flutter UI or platform runners, the Flutter SDK must be installed before implementation starts."
+  ],
+  "preflight_commands": [
+    "python3 --version",
+    "make --version",
+    "command -v flutter >/dev/null || true"
+  ],
   "required_commands": [
     "make ci",
     "make audit",

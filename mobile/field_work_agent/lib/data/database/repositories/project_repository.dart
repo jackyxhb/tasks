@@ -1,4 +1,5 @@
 import '../../../domain/entities/project_entity.dart';
+import '../../../core/utils/text_normalizer.dart';
 import '../database_executor.dart';
 import '../database_value_codec.dart';
 
@@ -51,6 +52,18 @@ class ProjectRepository {
       'SELECT * FROM projects ORDER BY updated_at DESC',
     );
     return rows.map(_fromRow).toList(growable: false);
+  }
+
+  Future<ProjectEntity?> findByNormalizedName(String projectName) async {
+    final normalizedName = TextNormalizer.normalize(projectName);
+    final rows = await executor.query(
+      'SELECT * FROM projects WHERE project_name_normalized = ? LIMIT 1',
+      <Object?>[normalizedName],
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    return _fromRow(rows.first);
   }
 
   ProjectEntity _fromRow(DatabaseRow row) {

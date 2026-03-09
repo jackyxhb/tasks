@@ -1,0 +1,52 @@
+{
+  "task_id": "T13-T14-extraction-validation-and-review-state-machine",
+  "objective": "Implement local extraction JSON validation and the meeting review state machine so AI output is validated before mutation and meeting transitions are explicitly enforced.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/lib/domain",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app"
+    ],
+    "max_files_to_edit": 12
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t13-t14-extraction-validation-and-review-state-machine.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Extraction JSON is validated against the local contract before any meeting-derived record mutation.",
+    "Invalid or incomplete extraction payloads fail safely and preserve the meeting for manual or retried review.",
+    "Meeting state transitions are enforced against the review-state document instead of being set ad hoc.",
+    "The implementation remains local-only and preserves the review gate between extraction output and final tasks."
+  ],
+  "stop_conditions": [
+    "The task requires live provider execution or UI screen work.",
+    "The task requires changing canonical docs instead of implementing against them.",
+    "The task would bypass the meeting review gate or auto-finalize extracted tasks."
+  ],
+  "approval_gates": [
+    "Introducing automatic final-task promotion from extraction output",
+    "Expanding scope into meeting review screens instead of validation and state logic"
+  ],
+  "deliverables": [
+    "Extraction payload validator",
+    "Meeting review transition policy",
+    "Services or guards that enforce allowed meeting-state transitions"
+  ],
+  "notes": [
+    "Continue from T1-T12 already implemented in this repo.",
+    "Primary references: docs/meeting-transcription-json-contract.md and docs/meeting-review-state-machine.md.",
+    "Keep no-wait autonomous flow unless a real scope or approval boundary appears."
+  ]
+}

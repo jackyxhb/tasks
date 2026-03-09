@@ -1,0 +1,52 @@
+{
+  "task_id": "T11-T12-transcript-storage-and-provider-abstraction",
+  "objective": "Implement transcript storage and a transcription provider abstraction so raw transcript, cleaned transcript, provider metadata, and failure states can be persisted without breaking the local meeting record.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/data/database",
+      "mobile/field_work_agent/lib/domain/entities",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app"
+    ],
+    "max_files_to_edit": 12
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t11-t12-transcript-storage-and-provider-abstraction.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Raw transcript, cleaned transcript, provider name/model, and failed transcription states can be persisted locally.",
+    "Transcript storage remains linked through the meeting and raw capture relationship.",
+    "Transcription is isolated behind one provider interface.",
+    "A failed provider response updates local records safely instead of breaking the meeting flow."
+  ],
+  "stop_conditions": [
+    "The task requires remote provider credentials or live network execution.",
+    "The task requires UI shell work instead of local application flow and persistence.",
+    "The task requires destructive schema migration logic for live user data."
+  ],
+  "approval_gates": [
+    "Introducing concrete remote provider credentials",
+    "Changing scope from provider abstraction to live service integration"
+  ],
+  "deliverables": [
+    "Raw capture metadata extension",
+    "Transcription provider contract",
+    "Transcript storage service",
+    "Failure-safe meeting transcription flow"
+  ],
+  "notes": [
+    "Ticket sources: docs/implementation-tickets.md T11 and T12.",
+    "This slice provides local persistence and provider abstraction, not live provider execution wiring."
+  ]
+}

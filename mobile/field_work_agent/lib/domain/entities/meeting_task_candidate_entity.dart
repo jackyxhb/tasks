@@ -20,6 +20,7 @@ class MeetingTaskCandidateEntity {
     this.durationText,
     this.locationText,
     this.ambiguities = const <String>[],
+    this.linkedTaskId,
   });
 
   final String id;
@@ -39,4 +40,5 @@ class MeetingTaskCandidateEntity {
   final String? durationText;
   final String? locationText;
   final List<String> ambiguities;
+  final String? linkedTaskId;
 }

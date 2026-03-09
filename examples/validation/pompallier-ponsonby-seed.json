@@ -1,0 +1,49 @@
+{
+  "scenario_id": "pompallier_ponsonby_acceptance",
+  "source_examples": {
+    "task_markdown": "TASKS.md",
+    "meeting_contract": "docs/meeting-transcription-json-contract.md",
+    "bundle_example": "examples/import-export/sample-bundle.json"
+  },
+  "project": {
+    "project_name": "Pompallier Ponsonby",
+    "client_oem": "OTIS",
+    "site_location": "302 Ponsonby Road, Ponsonby, Auckland 1011",
+    "site_contact_name": "Joel",
+    "site_contact_phone": "021 194 0200",
+    "coordinator_name": "Jack Xiao",
+    "project_manager_name": null
+  },
+  "text_capture": {
+    "channel": "wechat_text",
+    "raw_text": "现场培训支持 for Pompallier Ponsonby. Assist our technician with on-site training. Client OEM OTIS. Location 302 Ponsonby Road, Ponsonby, Auckland 1011. Site contact Joel 021 194 0200. Coordinator Jack Xiao. Start time 7:30 AM. Duration morning, half day. Worker Lin Yong +64 29 777 7020.",
+    "classification_type": "task",
+    "classification_confidence": 0.96,
+    "task": {
+      "task_type": "installation",
+      "task_title": "On-site training support for Lin Yong",
+      "description": "Assist our technician with on-site training at Pompallier Ponsonby.",
+      "scheduled_date": "2026-03-09",
+      "start_time_local": "7:30 AM",
+      "location_snapshot": "302 Ponsonby Road, Ponsonby, Auckland 1011",
+      "worker_name": "Lin Yong",
+      "worker_phone": "+64 29 777 7020",
+      "coordinator_name": "Jack Xiao",
+      "agentee_name": "Agentee",
+      "status": "planned",
+      "priority": "medium"
+    }
+  },
+  "meeting": {
+    "title": "Pompallier Ponsonby Coordination",
+    "recording_path": "audio/pompallier_ponsonby_coordination.m4a",
+    "transcription": {
+      "provider_name": "stub-transcriber",
+      "provider_model": "deterministic-v1",
+      "raw_transcript": "Project Pompallier Ponsonby. Joel confirmed access this morning. Let Lin Yong do the training this morning at 7:30. Maybe we still need tuning support later.",
+      "cleaned_transcript": "Project Pompallier Ponsonby. Joel confirmed site access for this morning. Lin Yong will handle the on-site training at 7:30 AM. Tuning support may still be needed later.",
+      "parse_version": "acceptance-v1"
+    },
+    "extraction_json": "{\n  \"schema_version\": \"v1\",\n  \"request_id\": \"acceptance-request-001\",\n  \"provider\": {\n    \"name\": \"stub-llm\",\n    \"model\": \"deterministic-v1\"\n  },\n  \"transcription\": {\n    \"language_mode\": \"bilingual_en_zh\",\n    \"detected_languages\": [\"en\", \"zh\"],\n    \"raw_transcript\": \"Project Pompallier Ponsonby. Joel confirmed access this morning. Let Lin Yong do the training this morning at 7:30. Maybe we still need tuning support later.\",\n    \"cleaned_transcript\": \"Project Pompallier Ponsonby. Joel confirmed site access for this morning. Lin Yong will handle the on-site training at 7:30 AM. Tuning support may still be needed later.\",\n    \"speaker_segments\": []\n  },\n  \"meeting\": {\n    \"title\": \"Pompallier Ponsonby Coordination\",\n    \"meeting_datetime_text\": \"2026-03-09 07:30 AM\",\n    \"meeting_location_text\": \"302 Ponsonby Road, Ponsonby, Auckland 1011\",\n    \"summary\": \"Coordination meeting confirming access, training, and likely follow-up tuning support.\",\n    \"minutes_items\": [\n      {\n        \"sequence\": 1,\n        \"text\": \"Joel confirmed site access for the morning training visit.\",\n        \"confidence\": 0.95,\n        \"source_snippet\": \"Joel confirmed access this morning\"\n      }\n    ],\n    \"decision_items\": [\n      {\n        \"sequence\": 1,\n        \"text\": \"Lin Yong will handle the on-site training at 7:30 AM.\",\n        \"confidence\": 0.93,\n        \"source_snippet\": \"Let Lin Yong do the training this morning at 7:30\"\n      }\n    ],\n    \"open_questions\": [\n      {\n        \"text\": \"Whether tuning support is still needed after the training visit.\",\n        \"confidence\": 0.62,\n        \"source_snippet\": \"Maybe we still need tuning support later\"\n      }\n    ]\n  },\n  \"project_candidates\": [\n    {\n      \"project_name\": \"Pompallier Ponsonby\",\n      \"client_oem\": \"OTIS\",\n      \"site_location\": \"302 Ponsonby Road, Ponsonby, Auckland 1011\",\n      \"site_contact_name\": \"Joel\",\n      \"site_contact_phone\": \"021 194 0200\",\n      \"coordinator_name\": \"Jack Xiao\",\n      \"project_manager_name\": null,\n      \"match_type\": \"existing\",\n      \"confidence\": 0.97,\n      \"source_snippet\": \"Project Pompallier Ponsonby. Joel confirmed access this morning.\"\n    }\n  ],\n  \"people_mentions\": [\n    {\n      \"name\": \"Lin Yong\",\n      \"phone\": \"+64 29 777 7020\",\n      \"role_hint\": \"worker\",\n      \"confidence\": 0.95,\n      \"source_snippet\": \"Lin Yong will handle the on-site training at 7:30 AM\"\n    }\n  ],\n  \"task_candidates\": [\n    {\n      \"candidate_id\": \"candidate_001\",\n      \"task_type\": \"installation\",\n      \"task_title\": \"On-site training support for Lin Yong\",\n      \"description\": \"Assist the technician with on-site training at Pompallier Ponsonby.\",\n      \"project_name\": \"Pompallier Ponsonby\",\n      \"worker_name\": \"Lin Yong\",\n      \"worker_phone\": \"+64 29 777 7020\",\n      \"coordinator_name\": \"Jack Xiao\",\n      \"project_manager_name\": null,\n      \"scheduled_date_text\": \"2026-03-09\",\n      \"start_time_text\": \"7:30 AM\",\n      \"duration_text\": \"morning, half day\",\n      \"location_text\": \"302 Ponsonby Road, Ponsonby, Auckland 1011\",\n      \"status_suggestion\": \"planned\",\n      \"priority_suggestion\": \"medium\",\n      \"confidence\": 0.94,\n      \"ambiguities\": [],\n      \"source_snippet\": \"Let Lin Yong do the training this morning at 7:30\"\n    }\n  ],\n  \"confidence\": {\n    \"overall\": 0.93,\n    \"transcript\": 0.95,\n    \"meeting_summary\": 0.93,\n    \"project_linking\": 0.97,\n    \"task_extraction\": 0.94\n  },\n  \"warnings\": [\n    \"Tuning support remains an open follow-up question.\"\n  ]\n}"
+  }
+}

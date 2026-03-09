@@ -50,11 +50,13 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - `bin/check-meeting-review-gate` - Detect missing meeting review-gate signals or suspicious direct final-task promotion patterns.
 - `bin/check-bundle-schema` - Validate the canonical import/export schema and sample bundle.
 - `bin/check-implementation-constraints` - Run all implementation-aware constraint checks together.
+- `bin/check-mobile-toolchain` - Fail fast when Flutter-dependent work is requested but the Flutter/Dart toolchain is not available.
 - `bin/check-task-contract [path]` - Validate a machine-readable task contract for autonomous runs.
 - `bin/check-harness` - Run the lightweight harness checks for this repo.
 - `make smoke` - Run the fastest repo smoke checks.
 - `make check` - Run lint-like and type-like harness verification commands.
 - `make task-contract CONTRACT=<path>` - Validate the current task contract before an autonomous run.
+- `make mobile-preflight` - Run the stable mobile toolchain preflight for Flutter-dependent work.
 - `make audit` - Run the harness audit entrypoint.
 - `make ci` - Run the full local harness pipeline.
 - `python3 scripts/harness_wizard.py status .` - Show harness artifact coverage.
@@ -82,6 +84,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 
 - `make smoke` must stay cheap and deterministic.
 - `make check` must run fast-fail harness verification before any longer workflow exists.
+- `make mobile-preflight` should remain opt-in for Flutter-dependent tasks instead of breaking non-mobile work.
 - `make ci` must remain the canonical single-command validation entrypoint.
 - Repo-local wrapper scripts under `scripts/harness/` are preferred over ad-hoc manual command sequences.
 
@@ -97,6 +100,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - Run `bin/check-constraints` after changing design assumptions or planning docs.
 - Run `bin/check-gc` when cleaning planning artifacts or after adding new focused docs.
 - Run `bin/check-implementation-constraints` after changing future implementation code or import/export contracts.
+- Run `bin/check-mobile-toolchain` before Flutter UI work, platform-runner generation, or mobile contracts that require runtime validation.
 - Run `bin/check-task-contract <path>` before substantial autonomous work when a task-specific contract exists.
 - Run `bin/check-harness` after changing harness files.
 - Run `python3 scripts/harness_wizard.py audit .` after changing core harness artifacts.

@@ -1,0 +1,51 @@
+{
+  "task_id": "T10-meeting-recording-flow",
+  "objective": "Implement the meeting recording flow so starting a recording immediately creates a linked local audio path, raw capture, and draft meeting record, with pause/resume/stop and restoration from persisted local state.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app",
+      "mobile/field_work_agent/lib/data/database/migrations"
+    ],
+    "max_files_to_edit": 10
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t10-meeting-recording-flow.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Starting a recording creates a draft meeting record and linked raw capture before later processing.",
+    "The flow exposes pause, resume, and stop operations at the application layer.",
+    "A local audio path is reserved under local storage so interrupted recordings remain recoverable.",
+    "The flow can restore a recording session from persisted meeting and raw capture state without relying on network services."
+  ],
+  "stop_conditions": [
+    "The task requires platform audio APIs or UI shell work.",
+    "The task requires schema changes outside the current meeting and raw capture models.",
+    "The task requires remote services instead of local application state."
+  ],
+  "approval_gates": [
+    "Adding platform recorder integration",
+    "Changing persistence schema instead of implementing on the current foundation"
+  ],
+  "deliverables": [
+    "Meeting recording session model",
+    "Meeting recording service",
+    "Start/pause/resume/stop/restore application flow"
+  ],
+  "notes": [
+    "Ticket source: docs/implementation-tickets.md T10.",
+    "This slice is application-flow only and should leave platform recorder integration for later work."
+  ]
+}

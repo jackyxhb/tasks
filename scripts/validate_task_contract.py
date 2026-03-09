@@ -44,6 +44,8 @@ def validate_contract(path: Path) -> None:
         "workspace_root",
         "mode",
         "scope",
+        "environment_prerequisites",
+        "preflight_commands",
         "required_commands",
         "success_criteria",
         "stop_conditions",
@@ -83,6 +85,11 @@ def validate_contract(path: Path) -> None:
     overlap = sorted(set(allowed_paths) & set(forbidden_paths))
     if overlap:
         raise ValueError(f"allowed and forbidden paths overlap: {', '.join(overlap)}")
+
+    if "environment_prerequisites" in contract:
+        require_string_list(contract, "environment_prerequisites", minimum=0)
+    if "preflight_commands" in contract:
+        require_string_list(contract, "preflight_commands", minimum=0)
 
     require_string_list(contract, "required_commands")
     require_string_list(contract, "success_criteria")

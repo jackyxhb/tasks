@@ -1,0 +1,5 @@
+- Purpose: harness repo for a local-first personal field work agent app and the autonomous-work checks that keep it aligned with canonical docs.
+- Tech stack: Dart/Flutter package under mobile/field_work_agent, SQLite-style local storage, shell/python harness scripts, JSON schemas and task contracts.
+- Structure: docs/ is the canonical design source; mobile/field_work_agent/lib is split into bootstrap, core, data, domain, and features; examples/task-contracts holds machine-readable run contracts.
+- Product constraints: v1 is local-only, meetings stay separate from tasks, and AI output produces reviewable candidates rather than final records.
+- Current mobile shell: lib/src contains the Flutter app shell and section screens for home, inbox, projects, tasks, meetings, search, reports, import/export, settings, and archive.

@@ -9,6 +9,8 @@ abstract class DatabaseExecutor {
   ]);
 
   Future<T> transaction<T>(Future<T> Function(DatabaseExecutor txn) action);
+
+  Future<void> close();
 }
 
 abstract class DatabaseOpener {

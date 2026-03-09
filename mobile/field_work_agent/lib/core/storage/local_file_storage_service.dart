@@ -97,7 +97,7 @@ class LocalFileStorageService {
   }
 
   String _join(String left, String right) {
-    final normalizedLeft = _normalizePath(left).replaceFirst(RegExp('/$'), '');
+    final normalizedLeft = _normalizePath(left).replaceFirst(RegExp(r'/$'), '');
     final normalizedRight = right.replaceAll('\\', '/').replaceFirst(RegExp('^/'), '');
     return '$normalizedLeft/$normalizedRight';
   }

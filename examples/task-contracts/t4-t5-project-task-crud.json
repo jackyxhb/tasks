@@ -1,0 +1,54 @@
+{
+  "task_id": "T4-T5-project-task-crud",
+  "objective": "Implement local project and task CRUD application flows on top of the existing foundation, including project create/edit/archive/browse and task create/edit/filter flows with provisional support and deterministic dedup keys.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app",
+      "mobile/field_work_agent/lib/data/database/migrations"
+    ],
+    "max_files_to_edit": 10
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t4-t5-project-task-crud.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Project CRUD application flows exist for create, edit, archive, list, and detail retrieval using local repositories.",
+    "Task CRUD application flows exist for create, edit, archive, detail retrieval, and local list filtering.",
+    "Task provisional behavior and needs-review flags are preserved through the application service.",
+    "Task dedup keys are computed consistently from normalized task data before finalized writes.",
+    "The implementation remains local-only and uses the existing repository and audit foundations."
+  ],
+  "stop_conditions": [
+    "The task requires introducing platform UI, routing, or app-shell code.",
+    "The task requires schema changes outside the current migration set.",
+    "The task requires remote services, sync, or hosted persistence."
+  ],
+  "approval_gates": [
+    "Expanding scope into UI shell or platform integration",
+    "Changing database schema instead of implementing application flows on the current foundation"
+  ],
+  "deliverables": [
+    "Project CRUD service",
+    "Task CRUD service",
+    "Task filter model",
+    "Deterministic task dedup key factory"
+  ],
+  "notes": [
+    "Ticket sources: docs/implementation-tickets.md T4 and T5.",
+    "Use feature-oriented folders under lib/features.",
+    "Keep the implementation at the application-flow level; future screens should be able to call these services directly."
+  ]
+}

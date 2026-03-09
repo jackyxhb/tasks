@@ -1,0 +1,5 @@
+- Prefer small immutable entity/value classes and service objects with explicit constructor injection.
+- Preserve local-only assumptions; do not introduce sync, backend, or multi-user role behavior.
+- Use explicit copy/rebuild patterns instead of hidden mutation.
+- Store timestamps in UTC and keep review-state transitions explicit through policy/services.
+- Keep UI/data changes narrow and aligned to docs/ux-screen-plan.md rather than inventing new product behavior.

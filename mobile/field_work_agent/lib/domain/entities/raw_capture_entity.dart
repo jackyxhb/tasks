@@ -11,6 +11,9 @@ class RawCaptureEntity {
     required this.createdAt,
     this.rawText,
     this.transcriptText,
+    this.transcriptionProvider,
+    this.transcriptionModel,
+    this.transcriptionError,
     this.audioFilePath,
     this.attachmentGroupId,
     this.captureTimezone,
@@ -24,6 +27,9 @@ class RawCaptureEntity {
   final RawCaptureChannel channel;
   final String? rawText;
   final String? transcriptText;
+  final String? transcriptionProvider;
+  final String? transcriptionModel;
+  final String? transcriptionError;
   final String? audioFilePath;
   final String? attachmentGroupId;
   final DateTime captureTime;

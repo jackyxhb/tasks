@@ -35,6 +35,32 @@ Why `mobile/field_work_agent/`:
 - fits the existing harness checks, which already watch `mobile/` as a future implementation root
 - leaves room for future companion tools without polluting the repo root
 
+## Environment Prerequisites
+
+This structure assumes Flutter tooling is available when the task includes UI execution, platform-runner generation, or package resolution.
+
+Required for normal Flutter app work:
+
+- Flutter SDK installed and available on `PATH`
+- Dart SDK available through the Flutter installation
+- Xcode command-line tools available on macOS when iOS tooling is needed
+
+Recommended preflight checks before starting mobile UI work:
+
+```sh
+./bin/check-mobile-toolchain
+```
+
+For deeper diagnosis after the repo-local preflight passes, use:
+
+```sh
+flutter --version
+flutter doctor -v
+dart --version
+```
+
+If these checks fail, the agent should treat that as an environment blocker or fall back to limited file-only scaffolding instead of assuming generated runners or runtime validation are possible.
+
 ## Flutter App Layout
 
 Inside `mobile/field_work_agent/lib/`, use this structure:

@@ -1,0 +1,55 @@
+{
+  "task_id": "T6-person-normalization-layer",
+  "objective": "Implement the person normalization layer so repeated contacts can be stored consistently, suggested by name or phone, and linked to projects with explicit relationship types.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/lib/data/database",
+      "mobile/field_work_agent/lib/domain/entities",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app",
+      "mobile/field_work_agent/lib/data/database/migrations"
+    ],
+    "max_files_to_edit": 10
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t6-person-normalization-layer.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "A local person normalization service exists for create, update, lookup, and project linking flows.",
+    "Person lookup supports suggestions by normalized name and normalized phone digits.",
+    "People can be linked to projects using explicit relation types.",
+    "The implementation remains local-only and uses the existing schema support for people and project_people."
+  ],
+  "stop_conditions": [
+    "The task requires schema changes outside the current migration set.",
+    "The task requires UI shell or route wiring.",
+    "The task requires remote contact sync or external identity services."
+  ],
+  "approval_gates": [
+    "Adding external contact sync",
+    "Changing schema instead of implementing on the existing people tables"
+  ],
+  "deliverables": [
+    "Phone normalizer",
+    "People repository",
+    "Project-people repository",
+    "Person normalization service"
+  ],
+  "notes": [
+    "Ticket source: docs/implementation-tickets.md T6.",
+    "Use the existing people and project_people tables and relation enum.",
+    "Keep this at the application-flow level so future project forms can reuse it directly."
+  ]
+}

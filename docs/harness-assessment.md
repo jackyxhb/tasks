@@ -41,8 +41,9 @@ Passing:
 
 Gaps:
 
-- no structural tests yet against implementation code because implementation code does not exist yet
-- no dependency-layer or implementation-boundary checks because implementation code does not exist yet
+- implementation code now exists under `mobile/field_work_agent/`, but the harness still lacks structural checks against it
+- implementation-boundary checks are still missing for the current app code
+- no environment preflight checks yet for mobile toolchains such as the Flutter SDK
 
 Score:
 
@@ -81,8 +82,10 @@ The harness is currently focused on preventing these already-observed failures:
 ## Immediate Recommendations
 
 1. Add implementation-aware structural checks once app code exists, especially for local-only storage, import/export format, and meeting-to-task review boundaries.
-2. Expand GC checks later to include stale exports, unused example artifacts, and obsolete planning branches.
-3. Replace the legacy root tombstones with full deletion once no external references remain.
+2. Add mobile environment preflight checks or contract conventions so Flutter-dependent work fails early when the SDK is missing.
+	Current state: repo-local preflight now exists at `bin/check-mobile-toolchain`, but it is not yet enforced automatically by generic CI because not all tasks require Flutter.
+3. Expand GC checks later to include stale exports, unused example artifacts, and obsolete planning branches.
+4. Replace the legacy root tombstones with full deletion once no external references remain.
 
 ## Fast Checks
 

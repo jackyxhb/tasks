@@ -1,0 +1,53 @@
+{
+  "task_id": "T9-dedup-service",
+  "objective": "Implement the local dedup service so likely duplicate tasks, meetings, and projects can be detected and surfaced as reviewable candidates.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "mobile/field_work_agent/lib/core",
+      "mobile/field_work_agent/lib/data/database",
+      "mobile/field_work_agent/lib/features",
+      "examples/task-contracts"
+    ],
+    "forbidden_paths": [
+      "AGENTS.md",
+      "PLANS.md",
+      "docs",
+      "schemas",
+      "mobile/field_work_agent/lib/app",
+      "mobile/field_work_agent/lib/data/database/migrations"
+    ],
+    "max_files_to_edit": 8
+  },
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/t9-dedup-service.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "A dedup service exists for tasks, projects, and meetings.",
+    "Task duplicate detection uses canonical dedup key logic when possible.",
+    "Project and meeting duplicate detection return reviewable candidates with reasons and scores.",
+    "The implementation remains local-only and returns candidates for later review UI instead of silently merging records."
+  ],
+  "stop_conditions": [
+    "The task requires UI shell work instead of application-layer duplicate candidate generation.",
+    "The task requires schema changes outside the current tables.",
+    "The task requires automatic merging instead of reviewable suggestions."
+  ],
+  "approval_gates": [
+    "Introducing automatic dedup merges",
+    "Changing schema instead of implementing on the current foundation"
+  ],
+  "deliverables": [
+    "Dedup candidate models",
+    "Dedup service",
+    "Task/project/meeting duplicate detection methods"
+  ],
+  "notes": [
+    "Ticket source: docs/implementation-tickets.md T9.",
+    "Task dedup must use the canonical task dedup key logic already introduced in the task flow.",
+    "Candidate output is for later review UI, not silent mutation."
+  ]
+}
