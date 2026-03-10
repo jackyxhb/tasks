@@ -104,6 +104,10 @@ class MeetingExtractionService {
     }
 
     final payload = validation.payload!;
+    _transitionPolicy.requireTransition(
+      from: extractingMeeting.reviewState,
+      to: MeetingReviewState.reviewRequired,
+    );
     final updatedMeeting = _copyMeeting(
       extractingMeeting,
       title: payload.meeting.title,

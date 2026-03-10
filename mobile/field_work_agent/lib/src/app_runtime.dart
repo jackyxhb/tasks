@@ -22,6 +22,7 @@ import '../domain/enums/task_status.dart';
 import '../domain/enums/task_type.dart';
 import '../features/capture/application/capture_classification.dart';
 import '../features/capture/application/capture_classification_service.dart';
+import '../features/meetings/application/meeting_manual_fallback_service.dart';
 import '../features/meetings/application/meeting_review_editor_service.dart';
 import '../features/meetings/application/meeting_review_models.dart';
 import '../features/meetings/application/meeting_review_service.dart';
@@ -83,6 +84,8 @@ abstract class AppShellController {
 
   Future<AppShellData> moveMeetingToManualReview({
     required String meetingId,
+    required String reason,
+    MeetingReviewDraft? draft,
     String? actorName,
   });
 
@@ -113,6 +116,20 @@ abstract class AppShellController {
     required String meetingId,
     required String candidateId,
     required String agenteeName,
+    String? actorName,
+  });
+
+  Future<AppShellData> mergeMeetingCandidateIntoTask({
+    required String meetingId,
+    required String candidateId,
+    required String taskId,
+    String? actorName,
+  });
+
+  Future<AppShellData> updateMeetingCandidate({
+    required String meetingId,
+    required String candidateId,
+    required MeetingTaskCandidateDraft draft,
     String? actorName,
   });
 
@@ -212,7 +229,12 @@ class StaticAppShellController implements AppShellController {
   Future<AppShellData> beginMeetingReview({required String meetingId, String? actorName}) async => data;
 
   @override
-  Future<AppShellData> moveMeetingToManualReview({required String meetingId, String? actorName}) async => data;
+  Future<AppShellData> moveMeetingToManualReview({
+    required String meetingId,
+    required String reason,
+    MeetingReviewDraft? draft,
+    String? actorName,
+  }) async => data;
 
   @override
   Future<AppShellData> updateMeetingDraft({
@@ -241,6 +263,22 @@ class StaticAppShellController implements AppShellController {
     required String meetingId,
     required String candidateId,
     required String agenteeName,
+    String? actorName,
+  }) async => data;
+
+  @override
+  Future<AppShellData> mergeMeetingCandidateIntoTask({
+    required String meetingId,
+    required String candidateId,
+    required String taskId,
+    String? actorName,
+  }) async => data;
+
+  @override
+  Future<AppShellData> updateMeetingCandidate({
+    required String meetingId,
+    required String candidateId,
+    required MeetingTaskCandidateDraft draft,
     String? actorName,
   }) async => data;
 
@@ -419,10 +457,17 @@ class LocalAppShellController implements AppShellController {
   }
 
   @override
-  Future<AppShellData> moveMeetingToManualReview({required String meetingId, String? actorName}) {
+  Future<AppShellData> moveMeetingToManualReview({
+    required String meetingId,
+    required String reason,
+    MeetingReviewDraft? draft,
+    String? actorName,
+  }) {
     return _withRuntime((runtime) async {
-      await runtime.meetingReviewService.moveToManualReviewOnly(
+      await runtime.meetingManualFallbackService.prepareManualReview(
         meetingId: meetingId,
+        reason: reason,
+        draft: draft,
         actorName: actorName,
       );
       return runtime.loadData();
@@ -500,6 +545,42 @@ class LocalAppShellController implements AppShellController {
         meetingId: meetingId,
         candidateId: candidateId,
         agenteeName: agenteeName,
+        actorName: actorName,
+      );
+      return runtime.loadData();
+    });
+  }
+
+  @override
+  Future<AppShellData> mergeMeetingCandidateIntoTask({
+    required String meetingId,
+    required String candidateId,
+    required String taskId,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.meetingTaskCandidateResolutionService.mergeIntoExistingTask(
+        meetingId: meetingId,
+        candidateId: candidateId,
+        taskId: taskId,
+        actorName: actorName,
+      );
+      return runtime.loadData();
+    });
+  }
+
+  @override
+  Future<AppShellData> updateMeetingCandidate({
+    required String meetingId,
+    required String candidateId,
+    required MeetingTaskCandidateDraft draft,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.meetingReviewEditorService.updateTaskCandidate(
+        meetingId: meetingId,
+        candidateId: candidateId,
+        draft: draft,
         actorName: actorName,
       );
       return runtime.loadData();
@@ -699,6 +780,7 @@ class _LocalAppRuntime {
     required this.taskCrudService,
     required this.captureClassificationService,
     required this.meetingReviewService,
+    required this.meetingManualFallbackService,
     required this.meetingReviewEditorService,
     required this.meetingTaskCandidateResolutionService,
   });
@@ -709,6 +791,7 @@ class _LocalAppRuntime {
   final TaskCrudService taskCrudService;
   final CaptureClassificationService captureClassificationService;
   final MeetingReviewService meetingReviewService;
+  final MeetingManualFallbackService meetingManualFallbackService;
   final MeetingReviewEditorService meetingReviewEditorService;
   final MeetingTaskCandidateResolutionService meetingTaskCandidateResolutionService;
 
@@ -745,6 +828,10 @@ class _LocalAppRuntime {
       meetingReviewService: MeetingReviewService(
         meetingRepository: database.meetings,
         rawCaptureRepository: database.rawCaptures,
+        auditLogService: auditLogService,
+      ),
+      meetingManualFallbackService: MeetingManualFallbackService(
+        meetingRepository: database.meetings,
         auditLogService: auditLogService,
       ),
       meetingReviewEditorService: MeetingReviewEditorService(

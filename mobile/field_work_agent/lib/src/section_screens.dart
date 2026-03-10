@@ -965,10 +965,14 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               successMessage: 'Meeting moved into review.',
             );
           },
-          onMoveToManual: () async {
+          onMoveToManual: (String reason, MeetingReviewDraft draft) async {
             Navigator.of(dialogContext).pop();
             await _runControllerAction(
-              () => widget.controller.moveMeetingToManualReview(meetingId: meeting.id),
+              () => widget.controller.moveMeetingToManualReview(
+                meetingId: meeting.id,
+                reason: reason,
+                draft: draft,
+              ),
               successMessage: 'Meeting moved to manual review.',
             );
           },
@@ -1009,6 +1013,29 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                 agenteeName: agenteeName,
               ),
               successMessage: 'Candidate saved as provisional task.',
+            );
+          },
+          onMergeCandidate: (String candidateId, String taskId) async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.mergeMeetingCandidateIntoTask(
+                meetingId: meeting.id,
+                candidateId: candidateId,
+                taskId: taskId,
+              ),
+              successMessage: 'Candidate merged into an existing task.',
+            );
+          },
+          onUpdateCandidate:
+              (String candidateId, MeetingTaskCandidateDraft draft) async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.updateMeetingCandidate(
+                meetingId: meeting.id,
+                candidateId: candidateId,
+                draft: draft,
+              ),
+              successMessage: 'Candidate changes saved.',
             );
           },
           onRejectCandidate: (String candidateId) async {
@@ -2052,6 +2079,8 @@ class _MeetingReviewDialog extends StatefulWidget {
     required this.onFinalize,
     required this.onAcceptCandidate,
     required this.onSaveCandidateProvisional,
+    required this.onMergeCandidate,
+    required this.onUpdateCandidate,
     required this.onRejectCandidate,
   });
 
@@ -2060,11 +2089,13 @@ class _MeetingReviewDialog extends StatefulWidget {
   final bool busy;
   final Future<void> Function(MeetingReviewDraft draft) onSaveDraft;
   final Future<void> Function() onBeginReview;
-  final Future<void> Function() onMoveToManual;
+  final Future<void> Function(String reason, MeetingReviewDraft draft) onMoveToManual;
   final Future<void> Function() onBeginCandidateResolution;
   final Future<void> Function() onFinalize;
   final Future<void> Function(String candidateId, String agenteeName) onAcceptCandidate;
   final Future<void> Function(String candidateId, String agenteeName) onSaveCandidateProvisional;
+  final Future<void> Function(String candidateId, String taskId) onMergeCandidate;
+  final Future<void> Function(String candidateId, MeetingTaskCandidateDraft draft) onUpdateCandidate;
   final Future<void> Function(String candidateId) onRejectCandidate;
 
   @override
@@ -2076,6 +2107,7 @@ class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
   late final TextEditingController _summaryController;
   late final TextEditingController _minutesController;
   late final TextEditingController _agenteeController;
+  late final TextEditingController _manualFallbackReasonController;
   late final Set<String> _projectIds;
 
   @override
@@ -2085,6 +2117,9 @@ class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
     _summaryController = TextEditingController(text: widget.meeting.summary ?? '');
     _minutesController = TextEditingController(text: widget.meeting.minutesMarkdown ?? '');
     _agenteeController = TextEditingController(text: _defaultAgenteeName(widget.data));
+    _manualFallbackReasonController = TextEditingController(
+      text: _defaultManualFallbackReason(widget.meeting.reviewState),
+    );
     _projectIds = widget.meeting.projectIds.toSet();
   }
 
@@ -2094,6 +2129,7 @@ class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
     _summaryController.dispose();
     _minutesController.dispose();
     _agenteeController.dispose();
+    _manualFallbackReasonController.dispose();
     super.dispose();
   }
 
@@ -2160,6 +2196,17 @@ class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
                     )
                     .toList(growable: false),
               ),
+              if (_canMoveToManual(widget.meeting.reviewState)) ...<Widget>[
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _manualFallbackReasonController,
+                  minLines: 2,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Manual Fallback Reason',
+                  ),
+                ),
+              ],
               if (widget.meeting.taskCandidates.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 20),
                 Text('Task Candidates', style: Theme.of(context).textTheme.titleMedium),
@@ -2182,7 +2229,7 @@ class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
         ),
         if (_canMoveToManual(widget.meeting.reviewState))
           OutlinedButton(
-            onPressed: widget.busy ? null : widget.onMoveToManual,
+            onPressed: widget.busy ? null : _moveToManual,
             child: const Text('Manual Review'),
           ),
         if (_canBeginReview(widget.meeting.reviewState))
@@ -2212,6 +2259,13 @@ class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
     final agenteeName = _agenteeController.text.trim().isEmpty
         ? _defaultAgenteeName(widget.data)
         : _agenteeController.text.trim();
+    final mergeableTasks = widget.data.tasks
+      .where((task) =>
+        task.archivedAt == null &&
+        (candidate.projectName == null ||
+          candidate.projectName!.trim().isEmpty ||
+          _taskProjectName(task, widget.data) == candidate.projectName))
+      .toList(growable: false);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: QueueItem(
@@ -2226,12 +2280,23 @@ class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
         status: candidate.state.name,
         actions: widget.meeting.reviewState == MeetingReviewState.taskCandidateResolution
             ? <Widget>[
+                OutlinedButton(
+                  onPressed: widget.busy ? null : () => _editCandidate(candidate),
+                  child: const Text('Edit'),
+                ),
                 FilledButton.tonal(
                   onPressed: widget.busy
                       ? null
                       : () => widget.onAcceptCandidate(candidate.id, agenteeName),
                   child: const Text('Create Task'),
                 ),
+                if (mergeableTasks.isNotEmpty)
+                  OutlinedButton(
+                    onPressed: widget.busy
+                        ? null
+                        : () => _mergeCandidate(candidate, mergeableTasks),
+                    child: const Text('Merge Task'),
+                  ),
                 OutlinedButton(
                   onPressed: widget.busy
                       ? null
@@ -2248,15 +2313,332 @@ class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
     );
   }
 
+  Future<void> _editCandidate(MeetingTaskCandidateEntity candidate) async {
+    final draft = await showDialog<MeetingTaskCandidateDraft>(
+      context: context,
+      builder: (BuildContext context) {
+        return _MeetingCandidateEditorDialog(candidate: candidate);
+      },
+    );
+    if (draft == null || !mounted) {
+      return;
+    }
+    await widget.onUpdateCandidate(candidate.id, draft);
+  }
+
+  Future<void> _mergeCandidate(
+    MeetingTaskCandidateEntity candidate,
+    List<TaskEntity> mergeableTasks,
+  ) async {
+    final taskId = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return _MeetingCandidateMergeDialog(
+          candidate: candidate,
+          tasks: mergeableTasks,
+          data: widget.data,
+        );
+      },
+    );
+    if (taskId == null || !mounted) {
+      return;
+    }
+    await widget.onMergeCandidate(candidate.id, taskId);
+  }
+
   Future<void> _saveDraft() {
     return widget.onSaveDraft(
-      MeetingReviewDraft(
-        transcriptText: _transcriptController.text,
-        summary: _summaryController.text,
-        minutesMarkdown: _minutesController.text,
-        projectIds: _projectIds.toList(growable: false),
-      ),
+      _currentDraft(),
     );
+  }
+
+  Future<void> _moveToManual() {
+    return widget.onMoveToManual(
+      _manualFallbackReasonController.text.trim(),
+      _currentDraft(),
+    );
+  }
+
+  MeetingReviewDraft _currentDraft() {
+    return MeetingReviewDraft(
+      transcriptText: _transcriptController.text,
+      summary: _summaryController.text,
+      minutesMarkdown: _minutesController.text,
+      projectIds: _projectIds.toList(growable: false),
+    );
+  }
+
+  String? _taskProjectName(TaskEntity task, AppShellData data) {
+    final project = data.projectById(task.projectId);
+    return project?.projectName;
+  }
+
+  String _defaultManualFallbackReason(MeetingReviewState state) {
+    switch (state) {
+      case MeetingReviewState.transcriptionFailed:
+        return 'Manual fallback after transcription failure.';
+      case MeetingReviewState.extractionFailed:
+        return 'Manual fallback after extraction failure.';
+      case MeetingReviewState.recordedPendingTranscription:
+      case MeetingReviewState.transcribedPendingExtraction:
+        return 'Manual fallback while AI processing is unavailable.';
+      default:
+        return 'Manual fallback requested by agentee.';
+    }
+  }
+}
+
+class _MeetingCandidateEditorDialog extends StatefulWidget {
+  const _MeetingCandidateEditorDialog({required this.candidate});
+
+  final MeetingTaskCandidateEntity candidate;
+
+  @override
+  State<_MeetingCandidateEditorDialog> createState() =>
+      _MeetingCandidateEditorDialogState();
+}
+
+class _MeetingCandidateEditorDialogState
+    extends State<_MeetingCandidateEditorDialog> {
+  late final TextEditingController _taskTitleController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _projectNameController;
+  late final TextEditingController _workerNameController;
+  late final TextEditingController _workerPhoneController;
+  late final TextEditingController _coordinatorController;
+  late final TextEditingController _projectManagerController;
+  late final TextEditingController _scheduledDateController;
+  late final TextEditingController _startTimeController;
+  late final TextEditingController _durationController;
+  late final TextEditingController _locationController;
+  late final TextEditingController _ambiguitiesController;
+
+  @override
+  void initState() {
+    super.initState();
+    final candidate = widget.candidate;
+    _taskTitleController = TextEditingController(text: candidate.taskTitle ?? '');
+    _descriptionController = TextEditingController(text: candidate.description ?? '');
+    _projectNameController = TextEditingController(text: candidate.projectName ?? '');
+    _workerNameController = TextEditingController(text: candidate.workerName ?? '');
+    _workerPhoneController = TextEditingController(text: candidate.workerPhone ?? '');
+    _coordinatorController = TextEditingController(text: candidate.coordinatorName ?? '');
+    _projectManagerController = TextEditingController(text: candidate.projectManagerName ?? '');
+    _scheduledDateController = TextEditingController(text: candidate.scheduledDateText ?? '');
+    _startTimeController = TextEditingController(text: candidate.startTimeText ?? '');
+    _durationController = TextEditingController(text: candidate.durationText ?? '');
+    _locationController = TextEditingController(text: candidate.locationText ?? '');
+    _ambiguitiesController = TextEditingController(text: candidate.ambiguities.join('\n'));
+  }
+
+  @override
+  void dispose() {
+    _taskTitleController.dispose();
+    _descriptionController.dispose();
+    _projectNameController.dispose();
+    _workerNameController.dispose();
+    _workerPhoneController.dispose();
+    _coordinatorController.dispose();
+    _projectManagerController.dispose();
+    _scheduledDateController.dispose();
+    _startTimeController.dispose();
+    _durationController.dispose();
+    _locationController.dispose();
+    _ambiguitiesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Candidate'),
+      content: SizedBox(
+        width: 560,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                controller: _taskTitleController,
+                decoration: const InputDecoration(labelText: 'Candidate Task Title'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _descriptionController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(labelText: 'Candidate Description'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _projectNameController,
+                decoration: const InputDecoration(labelText: 'Candidate Project Name'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _workerNameController,
+                decoration: const InputDecoration(labelText: 'Worker Name'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _workerPhoneController,
+                decoration: const InputDecoration(labelText: 'Worker Phone'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _coordinatorController,
+                decoration: const InputDecoration(labelText: 'Coordinator Name'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _projectManagerController,
+                decoration: const InputDecoration(labelText: 'Project Manager Name'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _scheduledDateController,
+                decoration: const InputDecoration(labelText: 'Scheduled Date Text'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _startTimeController,
+                decoration: const InputDecoration(labelText: 'Start Time Text'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _durationController,
+                decoration: const InputDecoration(labelText: 'Duration Text'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _locationController,
+                decoration: const InputDecoration(labelText: 'Location Text'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _ambiguitiesController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(labelText: 'Ambiguities'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop(
+              MeetingTaskCandidateDraft(
+                taskTitle: _taskTitleController.text,
+                description: _descriptionController.text,
+                projectName: _projectNameController.text,
+                workerName: _workerNameController.text,
+                workerPhone: _workerPhoneController.text,
+                coordinatorName: _coordinatorController.text,
+                projectManagerName: _projectManagerController.text,
+                scheduledDateText: _scheduledDateController.text,
+                startTimeText: _startTimeController.text,
+                durationText: _durationController.text,
+                locationText: _locationController.text,
+                ambiguities: _ambiguitiesController.text
+                    .split('\n')
+                    .map((value) => value.trim())
+                    .where((value) => value.isNotEmpty)
+                    .toList(growable: false),
+              ),
+            );
+          },
+          child: const Text('Save Candidate'),
+        ),
+      ],
+    );
+  }
+}
+
+class _MeetingCandidateMergeDialog extends StatefulWidget {
+  const _MeetingCandidateMergeDialog({
+    required this.candidate,
+    required this.tasks,
+    required this.data,
+  });
+
+  final MeetingTaskCandidateEntity candidate;
+  final List<TaskEntity> tasks;
+  final AppShellData data;
+
+  @override
+  State<_MeetingCandidateMergeDialog> createState() =>
+      _MeetingCandidateMergeDialogState();
+}
+
+class _MeetingCandidateMergeDialogState
+    extends State<_MeetingCandidateMergeDialog> {
+  String? _selectedTaskId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tasks.isNotEmpty) {
+      _selectedTaskId = widget.tasks.first.id;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Merge Candidate Into Task'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(widget.candidate.taskTitle ?? widget.candidate.taskType.name),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedTaskId,
+            items: widget.tasks
+                .map(
+                  (task) => DropdownMenuItem<String>(
+                    value: task.id,
+                    child: Text(_taskLabel(task)),
+                  ),
+                )
+                .toList(growable: false),
+            onChanged: (String? value) {
+              setState(() {
+                _selectedTaskId = value;
+              });
+            },
+            decoration: const InputDecoration(labelText: 'Existing Task'),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _selectedTaskId == null
+              ? null
+              : () => Navigator.of(context).pop(_selectedTaskId),
+          child: const Text('Merge'),
+        ),
+      ],
+    );
+  }
+
+  String _taskLabel(TaskEntity task) {
+    final project = widget.data.projectById(task.projectId);
+    return _joinParts(<String?>[
+      task.taskTitle,
+      project?.projectName,
+      task.status.name,
+    ]);
   }
 }
 

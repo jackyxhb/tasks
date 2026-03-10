@@ -159,6 +159,254 @@ void main() {
     expect(controller.acceptedAgenteeName, 'Local Agentee');
   });
 
+  testWidgets('meeting review dialog submits candidate edits', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final now = DateTime.utc(2026, 3, 10, 9, 0);
+    final data = AppShellData(
+      projects: const <ProjectEntity>[],
+      tasks: const <TaskEntity>[],
+      meetings: <MeetingEntity>[
+        MeetingEntity(
+          id: 'meeting_1',
+          title: 'Pompallier Coordination',
+          reviewState: MeetingReviewState.taskCandidateResolution,
+          needsReview: true,
+          transcriptText: 'Need on-site training support for Lin Yong tomorrow.',
+          taskCandidates: const <MeetingTaskCandidateEntity>[
+            MeetingTaskCandidateEntity(
+              id: 'candidate_1',
+              taskType: TaskType.maintenance,
+              state: TaskCandidateState.newCandidate,
+              confidence: 0.87,
+              sourceSnippet: 'Support Lin Yong on-site tomorrow morning.',
+              taskTitle: 'On-site training support',
+              projectName: 'Pompallier Ponsonby',
+            ),
+          ],
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      rawCaptures: const <RawCaptureEntity>[],
+      reportRuns: const <ReportRunEntity>[],
+      importRuns: const <ImportRunEntity>[],
+      exportRuns: const <ExportRunEntity>[],
+    );
+
+    final controller = _FakeAppShellController(data);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SectionBody(
+            section: AppSection.meetings,
+            data: data,
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final reviewButton = find.widgetWithText(FilledButton, 'Review Meeting');
+    await tester.ensureVisible(reviewButton.first);
+    await tester.tap(reviewButton.first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Candidate Task Title'),
+      'Edited candidate title',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Save Candidate'));
+    await tester.pumpAndSettle();
+
+    expect(controller.acceptedMeetingId, 'meeting_1');
+    expect(controller.acceptedCandidateId, 'candidate_1');
+    expect(controller.updatedCandidateDraft, isNotNull);
+    expect(controller.updatedCandidateDraft!.taskTitle, 'Edited candidate title');
+  });
+
+  testWidgets('meeting review dialog submits candidate merge', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final now = DateTime.utc(2026, 3, 10, 9, 0);
+    final data = AppShellData(
+      projects: <ProjectEntity>[
+        ProjectEntity(
+          id: 'project_1',
+          projectName: 'Pompallier Ponsonby',
+          projectNameNormalized: 'pompallier ponsonby',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      tasks: <TaskEntity>[
+        TaskEntity(
+          id: 'task_1',
+          projectId: 'project_1',
+          taskType: TaskType.maintenance,
+          taskTitle: 'Existing maintenance visit',
+          agenteeName: 'Local Agentee',
+          status: TaskStatus.planned,
+          priority: TaskPriority.medium,
+          isProvisional: false,
+          needsReview: false,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      meetings: <MeetingEntity>[
+        MeetingEntity(
+          id: 'meeting_1',
+          title: 'Pompallier Coordination',
+          reviewState: MeetingReviewState.taskCandidateResolution,
+          needsReview: true,
+          transcriptText: 'Need on-site training support for Lin Yong tomorrow.',
+          taskCandidates: const <MeetingTaskCandidateEntity>[
+            MeetingTaskCandidateEntity(
+              id: 'candidate_1',
+              taskType: TaskType.maintenance,
+              state: TaskCandidateState.newCandidate,
+              confidence: 0.87,
+              sourceSnippet: 'Support Lin Yong on-site tomorrow morning.',
+              taskTitle: 'On-site training support',
+              projectName: 'Pompallier Ponsonby',
+            ),
+          ],
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      rawCaptures: const <RawCaptureEntity>[],
+      reportRuns: const <ReportRunEntity>[],
+      importRuns: const <ImportRunEntity>[],
+      exportRuns: const <ExportRunEntity>[],
+    );
+
+    final controller = _FakeAppShellController(data);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SectionBody(
+            section: AppSection.meetings,
+            data: data,
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final reviewButton = find.widgetWithText(FilledButton, 'Review Meeting');
+    await tester.ensureVisible(reviewButton.first);
+    await tester.tap(reviewButton.first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Merge Task').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Merge'));
+    await tester.pumpAndSettle();
+
+    expect(controller.mergedMeetingId, 'meeting_1');
+    expect(controller.mergedCandidateId, 'candidate_1');
+    expect(controller.mergedTaskId, 'task_1');
+  });
+
+  testWidgets('meeting review dialog submits manual fallback with current draft', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final now = DateTime.utc(2026, 3, 10, 9, 0);
+    final data = AppShellData(
+      projects: <ProjectEntity>[
+        ProjectEntity(
+          id: 'project_1',
+          projectName: 'Pompallier Ponsonby',
+          projectNameNormalized: 'pompallier ponsonby',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      tasks: const <TaskEntity>[],
+      meetings: <MeetingEntity>[
+        MeetingEntity(
+          id: 'meeting_1',
+          title: 'Pompallier Coordination',
+          reviewState: MeetingReviewState.transcriptionFailed,
+          needsReview: true,
+          summary: 'Initial summary',
+          minutesMarkdown: '- Existing minute',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      rawCaptures: const <RawCaptureEntity>[],
+      reportRuns: const <ReportRunEntity>[],
+      importRuns: const <ImportRunEntity>[],
+      exportRuns: const <ExportRunEntity>[],
+    );
+
+    final controller = _FakeAppShellController(data);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SectionBody(
+            section: AppSection.meetings,
+            data: data,
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final reviewButton = find.widgetWithText(FilledButton, 'Review Meeting');
+    await tester.ensureVisible(reviewButton.first);
+    await tester.tap(reviewButton.first);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Summary'),
+      'Manual fallback summary',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Minutes Markdown'),
+      '- Manual minute',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Manual Fallback Reason'),
+      'Offline provider unavailable',
+    );
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Manual Review'));
+    await tester.pumpAndSettle();
+
+    expect(controller.manualFallbackReason, 'Offline provider unavailable');
+    expect(controller.manualFallbackDraft, isNotNull);
+    expect(controller.manualFallbackDraft!.summary, 'Manual fallback summary');
+    expect(controller.manualFallbackDraft!.minutesMarkdown, '- Manual minute');
+  });
+
   testWidgets('project screen submits project draft', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1400, 1800);
     tester.view.devicePixelRatio = 1.0;
@@ -281,9 +529,15 @@ class _FakeAppShellController implements AppShellController {
   ProjectDraft? createdProjectDraft;
   TaskDraft? createdTaskDraft;
   MeetingReviewDraft? savedMeetingDraft;
+  MeetingReviewDraft? manualFallbackDraft;
+  String? manualFallbackReason;
+  MeetingTaskCandidateDraft? updatedCandidateDraft;
   String? acceptedMeetingId;
   String? acceptedCandidateId;
   String? acceptedAgenteeName;
+  String? mergedMeetingId;
+  String? mergedCandidateId;
+  String? mergedTaskId;
 
   @override
   Future<AppShellData> load() async => data;
@@ -330,10 +584,32 @@ class _FakeAppShellController implements AppShellController {
   Future<AppShellData> finalizeMeeting({required String meetingId, String? actorName}) async => data;
 
   @override
+  Future<AppShellData> mergeMeetingCandidateIntoTask({
+    required String meetingId,
+    required String candidateId,
+    required String taskId,
+    String? actorName,
+  }) async {
+    mergedMeetingId = meetingId;
+    mergedCandidateId = candidateId;
+    mergedTaskId = taskId;
+    return data;
+  }
+
+  @override
   Future<AppShellData> markCaptureReviewed({required String captureId, String? actorName}) async => data;
 
   @override
-  Future<AppShellData> moveMeetingToManualReview({required String meetingId, String? actorName}) async => data;
+  Future<AppShellData> moveMeetingToManualReview({
+    required String meetingId,
+    required String reason,
+    MeetingReviewDraft? draft,
+    String? actorName,
+  }) async {
+    manualFallbackReason = reason;
+    manualFallbackDraft = draft;
+    return data;
+  }
 
   @override
   Future<AppShellData> archiveProject({required String projectId, String? actorName}) async => data;
@@ -352,6 +628,19 @@ class _FakeAppShellController implements AppShellController {
     required String agenteeName,
     String? actorName,
   }) async => data;
+
+  @override
+  Future<AppShellData> updateMeetingCandidate({
+    required String meetingId,
+    required String candidateId,
+    required MeetingTaskCandidateDraft draft,
+    String? actorName,
+  }) async {
+    updatedCandidateDraft = draft;
+    acceptedMeetingId = meetingId;
+    acceptedCandidateId = candidateId;
+    return data;
+  }
 
   @override
   Future<AppShellData> updateMeetingDraft({

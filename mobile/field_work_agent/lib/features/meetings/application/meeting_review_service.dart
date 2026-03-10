@@ -4,6 +4,7 @@ import '../../../data/database/repositories/raw_capture_repository.dart';
 import '../../../domain/entities/meeting_entity.dart';
 import '../../../domain/enums/meeting_review_state.dart';
 import '../../../domain/enums/raw_capture_channel.dart';
+import '../../../domain/enums/task_candidate_state.dart';
 import 'meeting_review_transition_policy.dart';
 
 class MeetingReviewService {
@@ -148,6 +149,15 @@ class MeetingReviewService {
     if (meeting.reviewState == MeetingReviewState.extractionFailed) {
       throw StateError(
         'Cannot finalize a meeting from extraction_failed. Move it to manual_review_only first.',
+      );
+    }
+
+    final unresolvedCandidates = meeting.taskCandidates
+        .where((candidate) => candidate.state == TaskCandidateState.newCandidate)
+        .length;
+    if (unresolvedCandidates > 0) {
+      throw StateError(
+        'Cannot finalize meeting with unresolved task candidates. Resolve or reject all candidates first.',
       );
     }
 

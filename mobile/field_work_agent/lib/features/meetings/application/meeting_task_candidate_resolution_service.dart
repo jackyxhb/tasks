@@ -4,6 +4,7 @@ import '../../../data/database/repositories/project_repository.dart';
 import '../../../domain/entities/meeting_entity.dart';
 import '../../../domain/entities/meeting_task_candidate_entity.dart';
 import '../../../domain/entities/task_entity.dart';
+import '../../../domain/enums/meeting_review_state.dart';
 import '../../../domain/enums/task_candidate_state.dart';
 import '../../../domain/enums/task_priority.dart';
 import '../../../domain/enums/task_status.dart';
@@ -79,8 +80,10 @@ class MeetingTaskCandidateResolutionService {
     if (meeting == null) {
       throw StateError('Meeting not found: $meetingId');
     }
+    _ensureResolutionState(meeting);
     final existingTask = await taskCrudService.requireDetail(taskId);
     final candidate = _requireCandidate(meeting, candidateId);
+    _ensureCandidateIsUnresolved(candidate);
     final updatedMeeting = await _updateCandidateState(
       meeting: meeting,
       candidateId: candidate.id,
@@ -105,7 +108,9 @@ class MeetingTaskCandidateResolutionService {
     if (meeting == null) {
       throw StateError('Meeting not found: $meetingId');
     }
+    _ensureResolutionState(meeting);
     final candidate = _requireCandidate(meeting, candidateId);
+    _ensureCandidateIsUnresolved(candidate);
     final updatedMeeting = await _updateCandidateState(
       meeting: meeting,
       candidateId: candidate.id,
@@ -132,7 +137,9 @@ class MeetingTaskCandidateResolutionService {
     if (meeting == null) {
       throw StateError('Meeting not found: $meetingId');
     }
+    _ensureResolutionState(meeting);
     final candidate = _requireCandidate(meeting, candidateId);
+    _ensureCandidateIsUnresolved(candidate);
     final task = await taskCrudService.create(
       _taskDraftFromCandidate(
         meeting: meeting,
@@ -260,6 +267,25 @@ class MeetingTaskCandidateResolutionService {
       }
     }
     throw StateError('Meeting task candidate not found: $candidateId');
+  }
+
+  void _ensureResolutionState(MeetingEntity meeting) {
+    if (meeting.reviewState == MeetingReviewState.taskCandidateResolution) {
+      return;
+    }
+    throw StateError(
+      'Meeting task candidates can only be resolved from task_candidate_resolution. '
+      'Current state: ${meeting.reviewState.storageValue}',
+    );
+  }
+
+  void _ensureCandidateIsUnresolved(MeetingTaskCandidateEntity candidate) {
+    if (candidate.state == TaskCandidateState.newCandidate) {
+      return;
+    }
+    throw StateError(
+      'Meeting task candidate ${candidate.id} is already resolved as ${candidate.state.storageValue}.',
+    );
   }
 
   TaskStatus _statusFromCandidate(MeetingTaskCandidateEntity candidate) {

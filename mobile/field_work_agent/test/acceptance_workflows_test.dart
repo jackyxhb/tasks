@@ -158,6 +158,138 @@ void main() {
       expect(resolution.task!.isProvisional, isTrue);
     });
 
+    test('invalid extraction payload fails safely without mutating meeting candidates',
+        () async {
+      final session = await harness.meetingRecordingService.startRecording(
+        title: seed.meeting.title,
+      );
+      final audioFile =
+          harness.storageService.resolveRelativePath(session.audioRelativePath);
+      await audioFile.parent.create(recursive: true);
+      await audioFile.writeAsString('acceptance audio bytes');
+
+      final stoppedSession =
+          await harness.meetingRecordingService.stopRecording(session);
+      final transcribedMeeting =
+          await harness.meetingTranscriptService.transcribeMeeting(
+        meetingId: stoppedSession.meeting.id,
+        provider: StubTranscriptionProvider(seed.meeting.transcription),
+      );
+
+      final extraction =
+          await harness.meetingExtractionService.applyExtractionJson(
+        meetingId: transcribedMeeting.id,
+        extractionJson: '{"schema_version":"v1"}',
+      );
+
+      expect(extraction.isSuccess, isFalse);
+      expect(extraction.validationIssues, isNotEmpty);
+      expect(extraction.meeting.reviewState,
+          MeetingReviewState.extractionFailed);
+      expect(extraction.meeting.taskCandidates, isEmpty);
+      expect(extraction.meeting.title, seed.meeting.title);
+    });
+
+    test('candidate resolution requires task-candidate-resolution state',
+        () async {
+      final session = await harness.meetingRecordingService.startRecording(
+        title: seed.meeting.title,
+      );
+      final audioFile =
+          harness.storageService.resolveRelativePath(session.audioRelativePath);
+      await audioFile.parent.create(recursive: true);
+      await audioFile.writeAsString('acceptance audio bytes');
+
+      final stoppedSession =
+          await harness.meetingRecordingService.stopRecording(session);
+      final transcribedMeeting =
+          await harness.meetingTranscriptService.transcribeMeeting(
+        meetingId: stoppedSession.meeting.id,
+        provider: StubTranscriptionProvider(seed.meeting.transcription),
+      );
+      final extraction =
+          await harness.meetingExtractionService.applyExtractionJson(
+        meetingId: transcribedMeeting.id,
+        extractionJson: seed.meeting.extractionJson,
+      );
+      final reviewInProgress = await harness.meetingReviewService.beginReview(
+        meetingId: extraction.meeting.id,
+      );
+
+      await expectLater(
+        () => harness.meetingTaskCandidateResolutionService
+            .saveAsProvisionalTask(
+          meetingId: reviewInProgress.id,
+          candidateId: reviewInProgress.taskCandidates.single.id,
+          agenteeName: seed.textCapture.task.agenteeName,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            contains('task_candidate_resolution'),
+          ),
+        ),
+      );
+    });
+
+    test('meeting cannot finalize until all task candidates are resolved',
+        () async {
+      final session = await harness.meetingRecordingService.startRecording(
+        title: seed.meeting.title,
+      );
+      final audioFile =
+          harness.storageService.resolveRelativePath(session.audioRelativePath);
+      await audioFile.parent.create(recursive: true);
+      await audioFile.writeAsString('acceptance audio bytes');
+
+      final stoppedSession =
+          await harness.meetingRecordingService.stopRecording(session);
+      final transcribedMeeting =
+          await harness.meetingTranscriptService.transcribeMeeting(
+        meetingId: stoppedSession.meeting.id,
+        provider: StubTranscriptionProvider(seed.meeting.transcription),
+      );
+      final extraction =
+          await harness.meetingExtractionService.applyExtractionJson(
+        meetingId: transcribedMeeting.id,
+        extractionJson: seed.meeting.extractionJson,
+      );
+      final reviewInProgress = await harness.meetingReviewService.beginReview(
+        meetingId: extraction.meeting.id,
+      );
+      final resolvingMeeting =
+          await harness.meetingReviewService.beginTaskCandidateResolution(
+        meetingId: reviewInProgress.id,
+      );
+
+      await expectLater(
+        () => harness.meetingReviewService.finalizeMeeting(
+          meetingId: resolvingMeeting.id,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            contains('unresolved task candidates'),
+          ),
+        ),
+      );
+
+      final resolution = await harness.meetingTaskCandidateResolutionService
+          .saveAsProvisionalTask(
+        meetingId: resolvingMeeting.id,
+        candidateId: resolvingMeeting.taskCandidates.single.id,
+        agenteeName: seed.textCapture.task.agenteeName,
+      );
+      final finalizedMeeting = await harness.meetingReviewService.finalizeMeeting(
+        meetingId: resolution.meeting.id,
+      );
+
+      expect(finalizedMeeting.reviewState, MeetingReviewState.finalized);
+      expect(finalizedMeeting.needsReview, isFalse);
+    });
+
     test(
         'export then import round-trip plus search and reports work on created records',
         () async {
