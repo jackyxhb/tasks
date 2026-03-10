@@ -53,7 +53,8 @@ class ReportService {
       'task_count': tasks.length,
       'tasks': tasks.map(_taskRow).toList(growable: false),
     };
-    final summary = 'Daily task list for ${_dateKey(date)} with ${tasks.length} tasks.';
+    final summary =
+        'Daily task list for ${_dateKey(date)} with ${tasks.length} tasks.';
     return _finalizeReport(
       reportType: 'daily_task_list',
       filterPayload: <String, Object?>{'date': _dateKey(date)},
@@ -91,21 +92,24 @@ class ReportService {
       },
       'task_count': tasks.length,
       'meeting_count': meetings.length,
-      'completed_task_count': tasks.where((task) => task.status == TaskStatus.completed).length,
+      'completed_task_count':
+          tasks.where((task) => task.status == TaskStatus.completed).length,
       'tasks': tasks.map(_taskRow).toList(growable: false),
       'meetings': meetings
           .map(
             (meeting) => <String, Object?>{
               'id': meeting.id,
               'title': meeting.title,
-              'meeting_datetime': meeting.meetingDateTime?.toUtc().toIso8601String(),
+              'meeting_datetime':
+                  meeting.meetingDateTime?.toUtc().toIso8601String(),
               'summary': meeting.summary,
               'review_state': meeting.reviewState.storageValue,
             },
           )
           .toList(growable: false),
     };
-    final summary = 'Project summary for ${project.projectName}: ${tasks.length} tasks and ${meetings.length} meetings.';
+    final summary =
+        'Project summary for ${project.projectName}: ${tasks.length} tasks and ${meetings.length} meetings.';
     return _finalizeReport(
       reportType: 'project_summary',
       filterPayload: <String, Object?>{'project_id': projectId},
@@ -125,7 +129,8 @@ class ReportService {
       if (!filter.includeArchived && meeting.archivedAt != null) {
         return false;
       }
-      if (filter.projectId != null && !meeting.projectIds.contains(filter.projectId)) {
+      if (filter.projectId != null &&
+          !meeting.projectIds.contains(filter.projectId)) {
         return false;
       }
       if (filter.fromDate != null) {
@@ -150,7 +155,8 @@ class ReportService {
             (meeting) => <String, Object?>{
               'id': meeting.id,
               'title': meeting.title,
-              'meeting_datetime': meeting.meetingDateTime?.toUtc().toIso8601String(),
+              'meeting_datetime':
+                  meeting.meetingDateTime?.toUtc().toIso8601String(),
               'summary': meeting.summary,
               'minutes_markdown': meeting.minutesMarkdown,
               'project_ids': meeting.projectIds,
@@ -190,12 +196,15 @@ class ReportService {
     if (outputFormat != ReportOutputFormat.inApp) {
       final reference = await fileStorageService.prepareFile(
         directory: LocalStorageDirectory.reports,
-        fileName: '${reportType}_${DateTime.now().toUtc().microsecondsSinceEpoch}.${outputFormat.fileExtension}',
+        fileName:
+            '${reportType}_${DateTime.now().toUtc().microsecondsSinceEpoch}.${outputFormat.fileExtension}',
       );
       final outputFile = File(reference.absolutePath);
       await outputFile.parent.create(recursive: true);
       await outputFile.writeAsString(
-        outputFormat == ReportOutputFormat.json ? _toJson(payload) : _toCsv(reportType, payload),
+        outputFormat == ReportOutputFormat.json
+            ? _toJson(payload)
+            : _toCsv(reportType, payload),
       );
       outputPath = reference.relativePath;
     }
@@ -254,7 +263,8 @@ class ReportService {
         final tasks = (payload['tasks'] as List<Object?>? ?? const <Object?>[])
             .whereType<Map<String, Object?>>()
             .toList(growable: false);
-        final buffer = StringBuffer('id,task_title,task_type,scheduled_date,worker_name,status,priority,project_id,is_provisional,needs_review\n');
+        final buffer = StringBuffer(
+            'id,task_title,task_type,scheduled_date,worker_name,status,priority,project_id,is_provisional,needs_review\n');
         for (final task in tasks) {
           buffer.writeln(_csvRow(<Object?>[
             task['id'],
@@ -271,10 +281,12 @@ class ReportService {
         }
         return buffer.toString();
       case 'meeting_minutes_pack':
-        final meetings = (payload['meetings'] as List<Object?>? ?? const <Object?>[])
-            .whereType<Map<String, Object?>>()
-            .toList(growable: false);
-        final buffer = StringBuffer('id,title,meeting_datetime,summary,minutes_markdown,project_ids\n');
+        final meetings =
+            (payload['meetings'] as List<Object?>? ?? const <Object?>[])
+                .whereType<Map<String, Object?>>()
+                .toList(growable: false);
+        final buffer = StringBuffer(
+            'id,title,meeting_datetime,summary,minutes_markdown,project_ids\n');
         for (final meeting in meetings) {
           buffer.writeln(_csvRow(<Object?>[
             meeting['id'],
@@ -287,7 +299,9 @@ class ReportService {
         }
         return buffer.toString();
       default:
-        return _csvRow(<Object?>['summary']) + '\n' + _csvRow(<Object?>[payload.toString()]);
+        return '${_csvRow(<Object?>['summary'])}\n${_csvRow(<Object?>[
+              payload.toString()
+            ])}';
     }
   }
 

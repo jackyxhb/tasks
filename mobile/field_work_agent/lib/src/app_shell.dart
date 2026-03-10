@@ -20,7 +20,8 @@ class FieldWorkAgentApp extends StatelessWidget {
       title: 'Field Work Agent',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light),
+        colorScheme:
+            ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light),
         scaffoldBackgroundColor: const Color(0xFFF4F1EA),
         useMaterial3: true,
         cardTheme: const CardThemeData(
@@ -92,7 +93,8 @@ class _AppShellState extends State<AppShell> {
           Expanded(
             child: FutureBuilder<AppShellData>(
               future: _dataFuture,
-              builder: (BuildContext context, AsyncSnapshot<AppShellData> snapshot) {
+              builder:
+                  (BuildContext context, AsyncSnapshot<AppShellData> snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
                   return const _LoadingBody();
                 }
@@ -153,7 +155,7 @@ class SectionNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entries = AppSection.values;
+    const entries = AppSection.values;
 
     return SafeArea(
       child: Padding(
@@ -194,23 +196,32 @@ class SectionNavigation extends StatelessWidget {
                   final active = section == selected;
 
                   return Material(
-                    color: active ? const Color(0xFF2B6659) : Colors.transparent,
+                    color:
+                        active ? const Color(0xFF2B6659) : Colors.transparent,
                     borderRadius: BorderRadius.circular(18),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
                       onTap: () => onSelected(section),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
                         child: Row(
                           children: <Widget>[
-                            Icon(section.icon, color: active ? Colors.white : const Color(0xFFB3C9C2)),
+                            Icon(section.icon,
+                                color: active
+                                    ? Colors.white
+                                    : const Color(0xFFB3C9C2)),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 section.title,
                                 style: TextStyle(
-                                  color: active ? Colors.white : const Color(0xFFE4EEEA),
-                                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                                  color: active
+                                      ? Colors.white
+                                      : const Color(0xFFE4EEEA),
+                                  fontWeight: active
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -266,7 +277,8 @@ class _ErrorBody extends StatelessWidget {
               children: <Widget>[
                 Text(
                   'Local app runtime failed to initialize',
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
                 Text(

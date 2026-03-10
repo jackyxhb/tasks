@@ -28,10 +28,13 @@ void main() {
       await harness.dispose();
     });
 
-    test('seed fixture represents the Pompallier Ponsonby task and meeting scenario', () async {
+    test(
+        'seed fixture represents the Pompallier Ponsonby task and meeting scenario',
+        () async {
       expect(seed.project.projectName, 'Pompallier Ponsonby');
       expect(seed.project.clientOem, 'OTIS');
-      expect(seed.textCapture.task.taskTitle, 'On-site training support for Lin Yong');
+      expect(seed.textCapture.task.taskTitle,
+          'On-site training support for Lin Yong');
       expect(seed.meeting.title, 'Pompallier Ponsonby Coordination');
       expect(seed.meeting.extractionJson, contains('candidate_001'));
     });
@@ -53,7 +56,8 @@ void main() {
         channel: seed.textCapture.channel,
         rawText: seed.textCapture.rawText,
       );
-      final classifiedCapture = await harness.captureClassificationService.applyClassification(
+      final classifiedCapture =
+          await harness.captureClassificationService.applyClassification(
         captureId: capture.id,
         classification: CaptureClassification(
           type: seed.textCapture.classificationType,
@@ -91,7 +95,8 @@ void main() {
       expect(classifiedCapture.classificationType, 'task');
     });
 
-    test('meeting audio to reviewed meeting and task candidates works', () async {
+    test('meeting audio to reviewed meeting and task candidates works',
+        () async {
       final project = await harness.projectCrudService.create(
         ProjectDraft(
           projectName: seed.project.projectName,
@@ -107,34 +112,44 @@ void main() {
         title: seed.meeting.title,
         projectIds: <String>[project.id],
       );
-      final audioFile = harness.storageService.resolveRelativePath(session.audioRelativePath);
+      final audioFile =
+          harness.storageService.resolveRelativePath(session.audioRelativePath);
       await audioFile.parent.create(recursive: true);
       await audioFile.writeAsString('acceptance audio bytes');
 
-      final stoppedSession = await harness.meetingRecordingService.stopRecording(session);
-      final transcribedMeeting = await harness.meetingTranscriptService.transcribeMeeting(
+      final stoppedSession =
+          await harness.meetingRecordingService.stopRecording(session);
+      final transcribedMeeting =
+          await harness.meetingTranscriptService.transcribeMeeting(
         meetingId: stoppedSession.meeting.id,
         provider: StubTranscriptionProvider(seed.meeting.transcription),
       );
-      final extraction = await harness.meetingExtractionService.applyExtractionJson(
+      final extraction =
+          await harness.meetingExtractionService.applyExtractionJson(
         meetingId: transcribedMeeting.id,
         extractionJson: seed.meeting.extractionJson,
       );
       final reviewInProgress = await harness.meetingReviewService.beginReview(
         meetingId: extraction.meeting.id,
       );
-      final reviewedMeeting = await harness.meetingReviewService.beginTaskCandidateResolution(
+      final reviewedMeeting =
+          await harness.meetingReviewService.beginTaskCandidateResolution(
         meetingId: reviewInProgress.id,
       );
 
-      expect(stoppedSession.meeting.reviewState, MeetingReviewState.recordedPendingTranscription);
-      expect(transcribedMeeting.reviewState, MeetingReviewState.transcribedPendingExtraction);
+      expect(stoppedSession.meeting.reviewState,
+          MeetingReviewState.recordedPendingTranscription);
+      expect(transcribedMeeting.reviewState,
+          MeetingReviewState.transcribedPendingExtraction);
       expect(extraction.isSuccess, isTrue);
-      expect(reviewedMeeting.reviewState, MeetingReviewState.taskCandidateResolution);
+      expect(reviewedMeeting.reviewState,
+          MeetingReviewState.taskCandidateResolution);
       expect(reviewedMeeting.taskCandidates, hasLength(1));
-      expect(reviewedMeeting.taskCandidates.single.taskTitle, seed.textCapture.task.taskTitle);
+      expect(reviewedMeeting.taskCandidates.single.taskTitle,
+          seed.textCapture.task.taskTitle);
 
-      final resolution = await harness.meetingTaskCandidateResolutionService.saveAsProvisionalTask(
+      final resolution = await harness.meetingTaskCandidateResolutionService
+          .saveAsProvisionalTask(
         meetingId: reviewedMeeting.id,
         candidateId: reviewedMeeting.taskCandidates.single.id,
         agenteeName: seed.textCapture.task.agenteeName,
@@ -143,7 +158,9 @@ void main() {
       expect(resolution.task!.isProvisional, isTrue);
     });
 
-    test('export then import round-trip plus search and reports work on created records', () async {
+    test(
+        'export then import round-trip plus search and reports work on created records',
+        () async {
       final project = await harness.projectCrudService.create(
         ProjectDraft(
           projectName: seed.project.projectName,
@@ -179,23 +196,28 @@ void main() {
         title: seed.meeting.title,
         projectIds: <String>[project.id],
       );
-      final audioFile = harness.storageService.resolveRelativePath(session.audioRelativePath);
+      final audioFile =
+          harness.storageService.resolveRelativePath(session.audioRelativePath);
       await audioFile.parent.create(recursive: true);
       await audioFile.writeAsString('acceptance audio bytes');
-      final stoppedSession = await harness.meetingRecordingService.stopRecording(session);
-      final transcribedMeeting = await harness.meetingTranscriptService.transcribeMeeting(
+      final stoppedSession =
+          await harness.meetingRecordingService.stopRecording(session);
+      final transcribedMeeting =
+          await harness.meetingTranscriptService.transcribeMeeting(
         meetingId: stoppedSession.meeting.id,
         provider: StubTranscriptionProvider(seed.meeting.transcription),
       );
-      final extractedMeeting = (await harness.meetingExtractionService.applyExtractionJson(
+      final extractedMeeting =
+          (await harness.meetingExtractionService.applyExtractionJson(
         meetingId: transcribedMeeting.id,
         extractionJson: seed.meeting.extractionJson,
       ))
-          .meeting;
-      final reviewInProgress = await harness.meetingReviewService.beginReview(meetingId: extractedMeeting.id);
+              .meeting;
+      final reviewInProgress = await harness.meetingReviewService
+          .beginReview(meetingId: extractedMeeting.id);
 
       final searchResults = await harness.searchService.search(
-        SearchRequest(query: 'Pompallier', limitPerGroup: 10),
+        const SearchRequest(query: 'Pompallier', limitPerGroup: 10),
       );
       final taskSearchResults = await harness.searchService.search(
         const SearchRequest(query: 'training', limitPerGroup: 10),
@@ -203,9 +225,18 @@ void main() {
       final meetingSearchResults = await harness.searchService.search(
         const SearchRequest(query: 'Coordination', limitPerGroup: 10),
       );
-      expect(searchResults.projects.any((hit) => hit.title.contains('Pompallier Ponsonby')), isTrue);
-      expect(taskSearchResults.tasks.any((hit) => hit.title.contains('On-site training support')), isTrue);
-      expect(meetingSearchResults.meetings.any((hit) => hit.title.contains('Pompallier Ponsonby Coordination')), isTrue);
+      expect(
+          searchResults.projects
+              .any((hit) => hit.title.contains('Pompallier Ponsonby')),
+          isTrue);
+      expect(
+          taskSearchResults.tasks
+              .any((hit) => hit.title.contains('On-site training support')),
+          isTrue);
+      expect(
+          meetingSearchResults.meetings.any(
+              (hit) => hit.title.contains('Pompallier Ponsonby Coordination')),
+          isTrue);
 
       final dailyReport = await harness.reportService.generateDailyTaskList(
         date: seed.textCapture.task.scheduledDate,
@@ -215,7 +246,8 @@ void main() {
         projectId: project.id,
         outputFormat: ReportOutputFormat.inApp,
       );
-      final minutesPack = await harness.reportService.generateMeetingMinutesPack(
+      final minutesPack =
+          await harness.reportService.generateMeetingMinutesPack(
         filter: ReportFilter(projectId: project.id),
         outputFormat: ReportOutputFormat.csv,
       );
@@ -223,18 +255,31 @@ void main() {
       expect(dailyReport.summary, contains('Daily task list'));
       expect(projectReport.payload['task_count'], 1);
       expect(minutesPack.outputPath, isNotNull);
-      expect(File(harness.storageService.resolveRelativePath(minutesPack.outputPath!).path).existsSync(), isTrue);
+      expect(
+          File(harness.storageService
+                  .resolveRelativePath(minutesPack.outputPath!)
+                  .path)
+              .existsSync(),
+          isTrue);
 
       final bundle = await harness.exportBundleCreatorService.createBundle(
-        scope: const ExportScopeRequest(type: 'project', value: 'Pompallier Ponsonby'),
+        scope: const ExportScopeRequest(
+            type: 'project', value: 'Pompallier Ponsonby'),
       );
-      expect(bundle.projects.any((record) => record['project_name'] == 'Pompallier Ponsonby'), isTrue);
+      expect(
+          bundle.projects
+              .any((record) => record['project_name'] == 'Pompallier Ponsonby'),
+          isTrue);
       expect(bundle.tasks.any((record) => record['id'] == task.id), isTrue);
-      expect(bundle.meetings.any((record) => record['id'] == reviewInProgress.id), isTrue);
+      expect(
+          bundle.meetings.any((record) => record['id'] == reviewInProgress.id),
+          isTrue);
 
       final importRelativePath = 'imports/${bundle.bundleId}.json';
-      final exportFile = harness.storageService.resolveRelativePath('exports/${bundle.bundleId}.json');
-      final importFile = harness.storageService.resolveRelativePath(importRelativePath);
+      final exportFile = harness.storageService
+          .resolveRelativePath('exports/${bundle.bundleId}.json');
+      final importFile =
+          harness.storageService.resolveRelativePath(importRelativePath);
       await importFile.parent.create(recursive: true);
       await importFile.writeAsString(await exportFile.readAsString());
 
@@ -245,10 +290,13 @@ void main() {
       expect(preview.taskCount, greaterThanOrEqualTo(1));
       expect(preview.meetingCount, greaterThanOrEqualTo(1));
 
-      await harness.importPreviewAndApplyService.applyBundle(relativeImportPath: importRelativePath);
-      final importedProject = await harness.database.projects.findById(project.id);
+      await harness.importPreviewAndApplyService
+          .applyBundle(relativeImportPath: importRelativePath);
+      final importedProject =
+          await harness.database.projects.findById(project.id);
       final importedTask = await harness.database.tasks.findById(task.id);
-      final importedMeeting = await harness.database.meetings.findById(reviewInProgress.id);
+      final importedMeeting =
+          await harness.database.meetings.findById(reviewInProgress.id);
 
       expect(importedProject, isNotNull);
       expect(importedTask, isNotNull);

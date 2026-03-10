@@ -39,6 +39,11 @@ This repo is the harness for the personal field work agent app. If an agent prod
   context: On 2026-03-09 the repo could validate global design constraints, but an agent still needed the user to restate task scope, success checks, and approval edges for each substantial run.
   consequence: Autonomous runs can overshoot scope, stop for avoidable clarification, or miss required verification.
   fix: Define a JSON task contract and validate it with bin/check-task-contract before major autonomous work.
+
+- rule: Canonical repo validation must compile and test the mobile package once implementation exists.
+  context: On 2026-03-09 the repo-level harness passed while the Flutter package still contained compile-time and integration regressions that only surfaced when the new acceptance suite ran.
+  consequence: make ci could report green even when the shipped mobile app was broken.
+  fix: Keep repo-local mobile analyze and focused mobile test wrappers under scripts/harness/ and run them from the canonical validation path.
 ```
 
 ## Available Tools
@@ -57,6 +62,8 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - `make check` - Run lint-like and type-like harness verification commands.
 - `make task-contract CONTRACT=<path>` - Validate the current task contract before an autonomous run.
 - `make mobile-preflight` - Run the stable mobile toolchain preflight for Flutter-dependent work.
+- `make mobile-typecheck` - Run the repo-local Flutter analyze wrapper for the mobile package.
+- `make mobile-test` - Run the focused repo-local Flutter test batch for the mobile package.
 - `make audit` - Run the harness audit entrypoint.
 - `make ci` - Run the full local harness pipeline.
 - `python3 scripts/harness_wizard.py status .` - Show harness artifact coverage.
@@ -84,7 +91,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 
 - `make smoke` must stay cheap and deterministic.
 - `make check` must run fast-fail harness verification before any longer workflow exists.
-- `make mobile-preflight` should remain opt-in for Flutter-dependent tasks instead of breaking non-mobile work.
+- `make mobile-preflight` should remain the stable explicit preflight for Flutter-dependent work and repo-local mobile wrappers should call it before Flutter commands.
 - `make ci` must remain the canonical single-command validation entrypoint.
 - Repo-local wrapper scripts under `scripts/harness/` are preferred over ad-hoc manual command sequences.
 
@@ -103,5 +110,6 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - Run `bin/check-mobile-toolchain` before Flutter UI work, platform-runner generation, or mobile contracts that require runtime validation.
 - Run `bin/check-task-contract <path>` before substantial autonomous work when a task-specific contract exists.
 - Run `bin/check-harness` after changing harness files.
+- Run `make mobile-typecheck` and `make mobile-test` when changing the repo harness or mobile validation path.
 - Run `python3 scripts/harness_wizard.py audit .` after changing core harness artifacts.
 - If a rule here matters and is not checkable yet, add a follow-up check or document the gap in docs/harness-assessment.md.

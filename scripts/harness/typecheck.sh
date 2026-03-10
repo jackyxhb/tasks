@@ -5,3 +5,4 @@ root_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 
 cd "$root_dir"
 python3 ./scripts/harness_wizard.py audit .
+./scripts/harness/mobile_typecheck.sh

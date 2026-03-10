@@ -3,8 +3,6 @@ import '../../../data/database/repositories/meeting_repository.dart';
 import '../../../data/database/repositories/project_repository.dart';
 import '../../../data/database/repositories/task_repository.dart';
 import '../../../domain/entities/meeting_entity.dart';
-import '../../../domain/entities/project_entity.dart';
-import '../../../domain/entities/task_entity.dart';
 import '../../projects/application/project_draft.dart';
 import '../../tasks/application/task_dedup_key_factory.dart';
 import '../../tasks/application/task_models.dart';
@@ -16,7 +14,8 @@ class DedupService {
     required this.taskRepository,
     required this.meetingRepository,
     TaskDedupKeyFactory? taskDedupKeyFactory,
-  }) : _taskDedupKeyFactory = taskDedupKeyFactory ?? const TaskDedupKeyFactory();
+  }) : _taskDedupKeyFactory =
+            taskDedupKeyFactory ?? const TaskDedupKeyFactory();
 
   final ProjectRepository projectRepository;
   final TaskRepository taskRepository;
@@ -41,13 +40,17 @@ class DedupService {
       }
 
       final normalizedTitle = TextNormalizer.normalizeNullable(draft.taskTitle);
-      if (normalizedTitle != null && task.taskTitleNormalized == normalizedTitle) {
+      if (normalizedTitle != null &&
+          task.taskTitleNormalized == normalizedTitle) {
         reasons.add('matching_task_title');
         score += 0.25;
       }
 
-      final normalizedWorker = TextNormalizer.normalizeNullable(draft.workerName);
-      if (normalizedWorker != null && TextNormalizer.normalizeNullable(task.workerName) == normalizedWorker) {
+      final normalizedWorker =
+          TextNormalizer.normalizeNullable(draft.workerName);
+      if (normalizedWorker != null &&
+          TextNormalizer.normalizeNullable(task.workerName) ==
+              normalizedWorker) {
         reasons.add('matching_worker');
         score += 0.15;
       }
@@ -79,7 +82,8 @@ class DedupService {
   Future<List<DedupCandidate>> findProjectDuplicates(ProjectDraft draft) async {
     final projects = await projectRepository.listAll();
     final normalizedProjectName = TextNormalizer.normalize(draft.projectName);
-    final normalizedLocation = TextNormalizer.normalizeNullable(draft.siteLocation);
+    final normalizedLocation =
+        TextNormalizer.normalizeNullable(draft.siteLocation);
     final candidates = <DedupCandidate>[];
 
     for (final project in projects) {
@@ -94,11 +98,13 @@ class DedupService {
         reasons.add('matching_project_name');
         score += 0.7;
       }
-      if (normalizedLocation != null && project.siteLocationNormalized == normalizedLocation) {
+      if (normalizedLocation != null &&
+          project.siteLocationNormalized == normalizedLocation) {
         reasons.add('matching_site_location');
         score += 0.2;
       }
-      if (_trimOrNull(draft.clientOem) != null && project.clientOem == _trimOrNull(draft.clientOem)) {
+      if (_trimOrNull(draft.clientOem) != null &&
+          project.clientOem == _trimOrNull(draft.clientOem)) {
         reasons.add('matching_client_oem');
         score += 0.1;
       }
@@ -118,7 +124,8 @@ class DedupService {
     return _sorted(candidates);
   }
 
-  Future<List<DedupCandidate>> findMeetingDuplicates(MeetingEntity meeting) async {
+  Future<List<DedupCandidate>> findMeetingDuplicates(
+      MeetingEntity meeting) async {
     final meetings = await meetingRepository.listAll();
     final candidates = <DedupCandidate>[];
     final normalizedTitle = TextNormalizer.normalizeNullable(meeting.title);
@@ -132,15 +139,19 @@ class DedupService {
       final reasons = <String>[];
       var score = 0.0;
 
-      if (meeting.sourceHash != null && meeting.sourceHash == existing.sourceHash) {
+      if (meeting.sourceHash != null &&
+          meeting.sourceHash == existing.sourceHash) {
         reasons.add('matching_source_hash');
         score += 0.8;
       }
-      if (normalizedTitle != null && TextNormalizer.normalizeNullable(existing.title) == normalizedTitle) {
+      if (normalizedTitle != null &&
+          TextNormalizer.normalizeNullable(existing.title) == normalizedTitle) {
         reasons.add('matching_title');
         score += 0.1;
       }
-      if (normalizedSummary != null && TextNormalizer.normalizeNullable(existing.summary) == normalizedSummary) {
+      if (normalizedSummary != null &&
+          TextNormalizer.normalizeNullable(existing.summary) ==
+              normalizedSummary) {
         reasons.add('matching_summary');
         score += 0.05;
       }

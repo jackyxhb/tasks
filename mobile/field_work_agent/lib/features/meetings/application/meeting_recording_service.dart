@@ -7,7 +7,6 @@ import '../../../data/database/repositories/raw_capture_repository.dart';
 import '../../../domain/entities/meeting_entity.dart';
 import '../../../domain/entities/raw_capture_entity.dart';
 import '../../../domain/enums/meeting_review_state.dart';
-import '../../../domain/enums/raw_capture_channel.dart';
 import '../../capture/application/raw_capture_intake_service.dart';
 import 'meeting_recording_session.dart';
 import 'meeting_review_transition_policy.dart';
@@ -26,7 +25,8 @@ class MeetingRecordingService {
     MeetingIdFactory? meetingIdFactory,
     MeetingClock? clock,
   })  : _meetingIdFactory = meetingIdFactory ?? _defaultMeetingIdFactory,
-        _transitionPolicy = transitionPolicy ?? const MeetingReviewTransitionPolicy(),
+        _transitionPolicy =
+            transitionPolicy ?? const MeetingReviewTransitionPolicy(),
         _clock = clock ?? _defaultClock;
 
   final MeetingRepository meetingRepository;
@@ -184,8 +184,10 @@ class MeetingRecordingService {
       updatedAt: stoppedAt,
     );
 
-    final file = fileStorageService.resolveRelativePath(session.audioRelativePath);
-    final updatedRawCapture = await _withResolvedChecksum(session.rawCapture, file);
+    final file =
+        fileStorageService.resolveRelativePath(session.audioRelativePath);
+    final updatedRawCapture =
+        await _withResolvedChecksum(session.rawCapture, file);
 
     await rawCaptureRepository.save(updatedRawCapture);
     await meetingRepository.save(updatedMeeting);
@@ -215,12 +217,14 @@ class MeetingRecordingService {
     if (meeting == null || meeting.sourceCaptureId == null) {
       return null;
     }
-    final rawCapture = await rawCaptureRepository.findById(meeting.sourceCaptureId!);
+    final rawCapture =
+        await rawCaptureRepository.findById(meeting.sourceCaptureId!);
     if (rawCapture == null || rawCapture.audioFilePath == null) {
       return null;
     }
 
-    final isStopped = meeting.reviewState == MeetingReviewState.recordedPendingTranscription;
+    final isStopped =
+        meeting.reviewState == MeetingReviewState.recordedPendingTranscription;
     return MeetingRecordingSession(
       meeting: meeting,
       rawCapture: rawCapture,

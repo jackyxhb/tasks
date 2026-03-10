@@ -1,6 +1,5 @@
 import '../../../core/audit/audit_log_service.dart';
 import '../../../core/utils/content_hash.dart';
-import '../../../core/utils/text_normalizer.dart';
 import '../../../data/database/repositories/raw_capture_repository.dart';
 import '../../../domain/entities/raw_capture_entity.dart';
 import '../../../domain/enums/raw_capture_channel.dart';
@@ -31,7 +30,8 @@ class RawCaptureIntakeService {
     String? actorName,
   }) {
     if (channel == RawCaptureChannel.audio) {
-      throw StateError('Audio captures must be created through createAudioCapture.');
+      throw StateError(
+          'Audio captures must be created through createAudioCapture.');
     }
     return _create(
       channel: channel,
@@ -92,7 +92,8 @@ class RawCaptureIntakeService {
     final normalizedAudioPath = _trimOrNull(audioFilePath);
 
     if (normalizedRawText == null && normalizedAudioPath == null) {
-      throw StateError('A raw capture requires raw text or an audio file path.');
+      throw StateError(
+          'A raw capture requires raw text or an audio file path.');
     }
 
     final hashInput = normalizedRawText ?? normalizedAudioPath!;

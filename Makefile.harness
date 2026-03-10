@@ -1,4 +1,4 @@
-.PHONY: smoke test lint typecheck check task-contract mobile-preflight audit ci
+.PHONY: smoke test lint typecheck check task-contract mobile-preflight mobile-typecheck mobile-test audit ci
 
 smoke:
 	@./scripts/harness/smoke.sh
@@ -11,6 +11,12 @@ lint:
 
 typecheck:
 	@./scripts/harness/typecheck.sh
+
+mobile-typecheck:
+	@./scripts/harness/mobile_typecheck.sh
+
+mobile-test:
+	@./scripts/harness/mobile_test.sh
 
 check: lint typecheck
 

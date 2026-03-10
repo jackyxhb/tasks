@@ -31,6 +31,8 @@ import 'package:field_work_agent/features/reports/application/report_service.dar
 import 'package:field_work_agent/features/search/application/search_service.dart';
 import 'package:field_work_agent/features/tasks/application/task_crud_service.dart';
 
+var _sqfliteFactoryConfigured = false;
+
 class ValidationSeedData {
   const ValidationSeedData({
     required this.project,
@@ -45,7 +47,8 @@ class ValidationSeedData {
   static ValidationSeedData fromJson(Map<String, Object?> json) {
     return ValidationSeedData(
       project: SeedProject.fromJson(json['project']! as Map<String, Object?>),
-      textCapture: SeedTextCapture.fromJson(json['text_capture']! as Map<String, Object?>),
+      textCapture: SeedTextCapture.fromJson(
+          json['text_capture']! as Map<String, Object?>),
       meeting: SeedMeeting.fromJson(json['meeting']! as Map<String, Object?>),
     );
   }
@@ -103,7 +106,8 @@ class SeedTextCapture {
       channel: rawCaptureChannelFromStorage(json['channel']! as String),
       rawText: json['raw_text']! as String,
       classificationType: json['classification_type']! as String,
-      classificationConfidence: (json['classification_confidence']! as num).toDouble(),
+      classificationConfidence:
+          (json['classification_confidence']! as num).toDouble(),
       task: SeedTask.fromJson(json['task']! as Map<String, Object?>),
     );
   }
@@ -173,7 +177,8 @@ class SeedMeeting {
     return SeedMeeting(
       title: json['title']! as String,
       recordingPath: json['recording_path']! as String,
-      transcription: SeedTranscription.fromJson(json['transcription']! as Map<String, Object?>),
+      transcription: SeedTranscription.fromJson(
+          json['transcription']! as Map<String, Object?>),
       extractionJson: json['extraction_json']! as String,
     );
   }
@@ -238,17 +243,22 @@ class AcceptanceHarness {
   final MeetingTranscriptService meetingTranscriptService;
   final MeetingExtractionService meetingExtractionService;
   final MeetingReviewService meetingReviewService;
-  final MeetingTaskCandidateResolutionService meetingTaskCandidateResolutionService;
+  final MeetingTaskCandidateResolutionService
+      meetingTaskCandidateResolutionService;
   final SearchService searchService;
   final ReportService reportService;
   final ExportBundleCreatorService exportBundleCreatorService;
   final ImportPreviewAndApplyService importPreviewAndApplyService;
 
   static Future<AcceptanceHarness> create() async {
-    ffi.sqfliteFfiInit();
-    sqflite.databaseFactory = ffi.databaseFactoryFfi;
+    if (!_sqfliteFactoryConfigured) {
+      ffi.sqfliteFfiInit();
+      sqflite.databaseFactory = ffi.databaseFactoryFfi;
+      _sqfliteFactoryConfigured = true;
+    }
 
-    final tempRoot = await Directory.systemTemp.createTemp('field_work_agent_acceptance_');
+    final tempRoot =
+        await Directory.systemTemp.createTemp('field_work_agent_acceptance_');
     final storageRoot = Directory(_join(tempRoot.path, 'storage'));
     final databasePath = _join(tempRoot.path, 'field_work_agent.sqlite');
     final migrationsDirectoryPath = _join(
@@ -260,8 +270,10 @@ class AcceptanceHarness {
       opener: _SqfliteDatabaseOpener(databasePath: databasePath),
       migrationsDirectoryPath: migrationsDirectoryPath,
     );
-    final storageService = await LocalFileStorageBootstrap.initialize(rootDirectory: storageRoot);
-    final auditLogService = AuditLogService(repository: AuditLogRepository(database.executor));
+    final storageService =
+        await LocalFileStorageBootstrap.initialize(rootDirectory: storageRoot);
+    final auditLogService =
+        AuditLogService(repository: AuditLogRepository(database.executor));
 
     final projectCrudService = ProjectCrudService(
       repository: database.projects,
@@ -300,7 +312,8 @@ class AcceptanceHarness {
       rawCaptureRepository: database.rawCaptures,
       auditLogService: auditLogService,
     );
-    final meetingTaskCandidateResolutionService = MeetingTaskCandidateResolutionService(
+    final meetingTaskCandidateResolutionService =
+        MeetingTaskCandidateResolutionService(
       meetingRepository: database.meetings,
       projectRepository: database.projects,
       taskCrudService: taskCrudService,
@@ -348,7 +361,8 @@ class AcceptanceHarness {
       meetingTranscriptService: meetingTranscriptService,
       meetingExtractionService: meetingExtractionService,
       meetingReviewService: meetingReviewService,
-      meetingTaskCandidateResolutionService: meetingTaskCandidateResolutionService,
+      meetingTaskCandidateResolutionService:
+          meetingTaskCandidateResolutionService,
       searchService: searchService,
       reportService: reportService,
       exportBundleCreatorService: exportBundleCreatorService,
@@ -358,7 +372,8 @@ class AcceptanceHarness {
 
   Future<void> dispose() async {
     await database.close();
-    await sqflite.deleteDatabase(_join(tempRoot.path, 'field_work_agent.sqlite'));
+    await sqflite
+        .deleteDatabase(_join(tempRoot.path, 'field_work_agent.sqlite'));
     if (tempRoot.existsSync()) {
       await tempRoot.delete(recursive: true);
     }
@@ -381,7 +396,8 @@ class StubTranscriptionProvider implements TranscriptionProvider {
   final SeedTranscription seed;
 
   @override
-  Future<TranscriptionResult> transcribe({required String audioFilePath}) async {
+  Future<TranscriptionResult> transcribe(
+      {required String audioFilePath}) async {
     return TranscriptionResult(
       providerName: seed.providerName,
       providerModel: seed.providerModel,
@@ -405,13 +421,16 @@ class _SqfliteDatabaseOpener implements DatabaseOpener {
 }
 
 class _SqfliteDatabaseExecutor implements DatabaseExecutor {
-  const _SqfliteDatabaseExecutor._({this.database, required sqflite.DatabaseExecutor executor}) : _executor = executor;
+  const _SqfliteDatabaseExecutor._(
+      {this.database, required sqflite.DatabaseExecutor executor})
+      : _executor = executor;
 
   factory _SqfliteDatabaseExecutor.database(sqflite.Database database) {
     return _SqfliteDatabaseExecutor._(database: database, executor: database);
   }
 
-  factory _SqfliteDatabaseExecutor.transaction(sqflite.Transaction transaction) {
+  factory _SqfliteDatabaseExecutor.transaction(
+      sqflite.Transaction transaction) {
     return _SqfliteDatabaseExecutor._(executor: transaction);
   }
 
@@ -419,24 +438,28 @@ class _SqfliteDatabaseExecutor implements DatabaseExecutor {
   final sqflite.DatabaseExecutor _executor;
 
   @override
-  Future<void> execute(String sql, [List<Object?> parameters = const <Object?>[]]) {
+  Future<void> execute(String sql,
+      [List<Object?> parameters = const <Object?>[]]) {
     return _executor.execute(sql, parameters);
   }
 
   @override
-  Future<List<DatabaseRow>> query(String sql, [List<Object?> parameters = const <Object?>[]]) async {
+  Future<List<DatabaseRow>> query(String sql,
+      [List<Object?> parameters = const <Object?>[]]) async {
     final rows = await _executor.rawQuery(sql, parameters);
     return rows.cast<DatabaseRow>();
   }
 
   @override
-  Future<T> transaction<T>(Future<T> Function(DatabaseExecutor txn) action) async {
+  Future<T> transaction<T>(
+      Future<T> Function(DatabaseExecutor txn) action) async {
     final currentDatabase = database;
     if (currentDatabase == null) {
       return action(this);
     }
 
-    return currentDatabase.transaction<T>((sqflite.Transaction transaction) async {
+    return currentDatabase
+        .transaction<T>((sqflite.Transaction transaction) async {
       return action(_SqfliteDatabaseExecutor.transaction(transaction));
     });
   }
@@ -451,7 +474,9 @@ class _SqfliteDatabaseExecutor implements DatabaseExecutor {
 }
 
 String _join(String left, String right) {
-  final normalizedLeft = left.replaceAll('\\', '/').replaceFirst(RegExp(r'/$'), '');
-  final normalizedRight = right.replaceAll('\\', '/').replaceFirst(RegExp('^/'), '');
+  final normalizedLeft =
+      left.replaceAll('\\', '/').replaceFirst(RegExp(r'/$'), '');
+  final normalizedRight =
+      right.replaceAll('\\', '/').replaceFirst(RegExp('^/'), '');
   return '$normalizedLeft/$normalizedRight';
 }

@@ -1,0 +1,55 @@
+{
+  "task_id": "H1-mobile-harness-validation",
+  "objective": "Tighten the repo harness so the canonical validation path compiles and tests the mobile package instead of only checking docs and harness artifacts.",
+  "workspace_root": ".",
+  "mode": "autonomous",
+  "scope": {
+    "allowed_paths": [
+      "AGENTS.md",
+      "Makefile.harness",
+      "docs/harness-assessment.md",
+      "examples/task-contracts",
+      "scripts/harness"
+    ],
+    "forbidden_paths": [
+      "docs/app-design-spec.md",
+      "mobile/field_work_agent/lib",
+      "schemas"
+    ],
+    "max_files_to_edit": 8
+  },
+  "environment_prerequisites": [
+    "Flutter SDK is installed and available on PATH.",
+    "The mobile package at mobile/field_work_agent can run flutter analyze and flutter test locally."
+  ],
+  "preflight_commands": [
+    "make mobile-preflight"
+  ],
+  "required_commands": [
+    "make task-contract CONTRACT=examples/task-contracts/h1-mobile-harness-validation.json",
+    "make ci",
+    "make audit"
+  ],
+  "success_criteria": [
+    "Repo-local wrapper scripts exist for mobile analyze and the focused mobile test batch.",
+    "The canonical harness path runs those mobile wrappers during repo validation.",
+    "Harness docs and failure-ledger notes explain why mobile compile and test coverage is now enforced."
+  ],
+  "stop_conditions": [
+    "The required Flutter toolchain is unavailable and the repo-level harness cannot run mobile validation in this environment.",
+    "Completing the work would require changing mobile product code instead of harness files."
+  ],
+  "approval_gates": [
+    "Expanding the repo harness to run the full mobile test suite instead of a focused deterministic batch.",
+    "Adding new non-dev runtime dependencies to support harness execution."
+  ],
+  "deliverables": [
+    "Mobile analyze wrapper",
+    "Mobile test wrapper",
+    "Updated harness docs and canonical validation path"
+  ],
+  "notes": [
+    "Keep make smoke cheap and deterministic.",
+    "Use repo-local wrapper scripts under scripts/harness rather than ad-hoc command sequences."
+  ]
+}

@@ -2,6 +2,7 @@ import '../../../core/audit/audit_log_service.dart';
 import '../../../data/database/repositories/meeting_repository.dart';
 import '../../../domain/entities/meeting_entity.dart';
 import '../../../domain/entities/meeting_task_candidate_entity.dart';
+import '../../../domain/enums/task_candidate_state.dart';
 import 'meeting_review_models.dart';
 
 class MeetingReviewEditorService {
