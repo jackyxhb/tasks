@@ -119,6 +119,7 @@ class _AppShellState extends State<AppShell> {
                         data: data,
                         controller: widget.controller,
                         onDataChanged: _replaceData,
+                        onNavigate: _selectSection,
                       ),
                     ),
                   ),

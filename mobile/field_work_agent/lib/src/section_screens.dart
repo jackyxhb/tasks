@@ -27,18 +27,20 @@ class SectionBody extends StatelessWidget {
     required this.data,
     this.controller = const StaticAppShellController(AppShellData.empty()),
     this.onDataChanged,
+    this.onNavigate,
   });
 
   final AppSection section;
   final AppShellData data;
   final AppShellController controller;
   final ValueChanged<AppShellData>? onDataChanged;
+  final ValueChanged<AppSection>? onNavigate;
 
   @override
   Widget build(BuildContext context) {
     switch (section) {
       case AppSection.home:
-        return HomeDashboard(data: data);
+        return HomeDashboard(data: data, onNavigate: onNavigate);
       case AppSection.inbox:
         return InboxScreen(
           data: data,
@@ -92,9 +94,14 @@ class SectionBody extends StatelessWidget {
 }
 
 class HomeDashboard extends StatelessWidget {
-  const HomeDashboard({super.key, required this.data});
+  const HomeDashboard({
+    super.key,
+    required this.data,
+    this.onNavigate,
+  });
 
   final AppShellData data;
+  final ValueChanged<AppSection>? onNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -107,13 +114,49 @@ class HomeDashboard extends StatelessWidget {
       summary:
           'Prioritize pending review first, then move into today\'s work, recent meetings, and bundle exchange history.',
       accent: AppSection.home.accent,
-      actions: const <ActionData>[
-        ActionData(label: 'Paste Text', icon: Icons.content_paste_go_rounded),
-        ActionData(label: 'Record Meeting', icon: Icons.mic_rounded),
-        ActionData(label: 'New Task', icon: Icons.task_alt_rounded),
-        ActionData(label: 'New Project', icon: Icons.apartment_rounded),
-        ActionData(label: 'Import Bundle', icon: Icons.download_rounded),
-        ActionData(label: 'Search', icon: Icons.manage_search_rounded),
+      actions: <ActionData>[
+        ActionData(
+          label: 'Paste Text',
+          icon: Icons.content_paste_go_rounded,
+          onPressed: onNavigate == null
+              ? null
+              : () => onNavigate!(AppSection.inbox),
+        ),
+        ActionData(
+          label: 'Record Meeting',
+          icon: Icons.mic_rounded,
+          onPressed: onNavigate == null
+              ? null
+              : () => onNavigate!(AppSection.meetings),
+        ),
+        ActionData(
+          label: 'New Task',
+          icon: Icons.task_alt_rounded,
+          onPressed: onNavigate == null
+              ? null
+              : () => onNavigate!(AppSection.tasks),
+        ),
+        ActionData(
+          label: 'New Project',
+          icon: Icons.apartment_rounded,
+          onPressed: onNavigate == null
+              ? null
+              : () => onNavigate!(AppSection.projects),
+        ),
+        ActionData(
+          label: 'Import Bundle',
+          icon: Icons.download_rounded,
+          onPressed: onNavigate == null
+              ? null
+              : () => onNavigate!(AppSection.importSection),
+        ),
+        ActionData(
+          label: 'Search',
+          icon: Icons.manage_search_rounded,
+          onPressed: onNavigate == null
+              ? null
+              : () => onNavigate!(AppSection.search),
+        ),
       ],
       metrics: <MetricData>[
         MetricData(
@@ -2025,6 +2068,7 @@ class FeatureSectionScaffold extends StatelessWidget {
                     side: BorderSide.none,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 10),
+                    onPressed: action.onPressed,
                   ),
                 )
                 .toList(growable: false),
@@ -4326,10 +4370,15 @@ RawCaptureEntity? _findCaptureForMeeting(
 }
 
 class ActionData {
-  const ActionData({required this.label, required this.icon});
+  const ActionData({
+    required this.label,
+    required this.icon,
+    this.onPressed,
+  });
 
   final String label;
   final IconData icon;
+  final VoidCallback? onPressed;
 }
 
 class MetricData {

@@ -1,24 +1,2 @@
-# Flutter/Dart
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub/
-build/
-
-# IDE
-.idea/
-.vscode/
-
-# Platform
-android/.gradle/
-android/app/debug/
-android/app/profile/
-android/app/release/
-ios/Flutter/Flutter.framework/
-ios/Flutter/Flutter.podspec
-ios/Pods/
-ios/Runner.xcworkspace/
-macos/Flutter/ephemeral/
-linux/flutter/ephemeral/
-windows/flutter/ephemeral/
+# Ignore rules are centralized in the repository root .gitignore.
+# Keep this file to preserve the package-local convention used by Flutter.

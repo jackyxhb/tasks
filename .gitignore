@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+
+# Flutter / Dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub/
+**/build/
+**/coverage/
+
+# IDE
+**/.idea/
+**/.vscode/
+
+# iOS / macOS generated files
+**/.symlinks/
+**/Pods/
+**/DerivedData/
+**/Flutter/App.framework/
+**/Flutter/Flutter.framework/
+**/Flutter/Flutter.podspec
+**/Flutter/Generated.xcconfig
+**/Flutter/ephemeral/
+**/Flutter/flutter_export_environment.sh
+**/Runner.xcworkspace/
+**/generated_config.cmake
+
+# Android generated files
+**/android/.gradle/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+
+# Linux / Windows generated files
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
