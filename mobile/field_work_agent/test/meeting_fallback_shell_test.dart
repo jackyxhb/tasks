@@ -100,7 +100,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MeetingsScreen(data: data),
+          body: MeetingsScreen(
+            data: data,
+            controller: StaticAppShellController(data),
+          ),
         ),
       ),
     );

@@ -114,7 +114,12 @@ class _AppShellState extends State<AppShell> {
                     key: ValueKey<AppSection>(section),
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(isWide ? 8 : 20, 12, 20, 20),
-                      child: SectionBody(section: section, data: data),
+                      child: SectionBody(
+                        section: section,
+                        data: data,
+                        controller: widget.controller,
+                        onDataChanged: _replaceData,
+                      ),
                     ),
                   ),
                 );
@@ -139,6 +144,12 @@ class _AppShellState extends State<AppShell> {
   void _reload() {
     setState(() {
       _dataFuture = widget.controller.load();
+    });
+  }
+
+  void _replaceData(AppShellData data) {
+    setState(() {
+      _dataFuture = Future<AppShellData>.value(data);
     });
   }
 }

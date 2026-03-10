@@ -6,15 +6,26 @@ import '../domain/entities/raw_capture_entity.dart';
 import '../domain/entities/task_entity.dart';
 import '../domain/enums/meeting_review_state.dart';
 import '../domain/enums/raw_capture_parse_status.dart';
+import '../domain/enums/task_priority.dart';
+import '../domain/enums/task_type.dart';
 import '../domain/enums/task_status.dart';
+import '../features/meetings/application/meeting_review_models.dart';
 import 'app_runtime.dart';
 import 'app_sections.dart';
 
 class SectionBody extends StatelessWidget {
-  const SectionBody({super.key, required this.section, required this.data});
+  const SectionBody({
+    super.key,
+    required this.section,
+    required this.data,
+    this.controller = const StaticAppShellController(AppShellData.empty()),
+    this.onDataChanged,
+  });
 
   final AppSection section;
   final AppShellData data;
+  final AppShellController controller;
+  final ValueChanged<AppShellData>? onDataChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +33,21 @@ class SectionBody extends StatelessWidget {
       case AppSection.home:
         return HomeDashboard(data: data);
       case AppSection.inbox:
-        return InboxScreen(data: data);
+        return InboxScreen(
+          data: data,
+          controller: controller,
+          onDataChanged: onDataChanged,
+        );
       case AppSection.projects:
         return ProjectsScreen(data: data);
       case AppSection.tasks:
         return TasksScreen(data: data);
       case AppSection.meetings:
-        return MeetingsScreen(data: data);
+        return MeetingsScreen(
+          data: data,
+          controller: controller,
+          onDataChanged: onDataChanged,
+        );
       case AppSection.search:
         return const SearchScreen();
       case AppSection.reports:
@@ -117,14 +136,28 @@ class HomeDashboard extends StatelessWidget {
   }
 }
 
-class InboxScreen extends StatelessWidget {
-  const InboxScreen({super.key, required this.data});
+class InboxScreen extends StatefulWidget {
+  const InboxScreen({
+    super.key,
+    required this.data,
+    required this.controller,
+    this.onDataChanged,
+  });
 
   final AppShellData data;
+  final AppShellController controller;
+  final ValueChanged<AppShellData>? onDataChanged;
+
+  @override
+  State<InboxScreen> createState() => _InboxScreenState();
+}
+
+class _InboxScreenState extends State<InboxScreen> {
+  bool _busy = false;
 
   @override
   Widget build(BuildContext context) {
-    final pendingCaptures = _pendingCaptures(data);
+    final pendingCaptures = _pendingCaptures(widget.data);
 
     return FeatureSectionScaffold(
       title: 'Inbox Review Queue',
@@ -151,7 +184,7 @@ class InboxScreen extends StatelessWidget {
             color: const Color(0xFFB34A3C)),
         MetricData(
             title: 'Duplicate Risks',
-            value: '${_duplicateRiskCount(data)}',
+            value: '${_duplicateRiskCount(widget.data)}',
             detail: 'Likely overlaps with recent projects or task records.',
             color: const Color(0xFF5A5E9A)),
       ],
@@ -159,7 +192,7 @@ class InboxScreen extends StatelessWidget {
         DetailCard(
           title: 'Unreviewed Captures',
           subtitle: 'Source channel, confidence, and project guess',
-          children: _buildCaptureQueue(pendingCaptures),
+          children: _buildInteractiveCaptureQueue(context, pendingCaptures),
         ),
         const ResponsiveGrid(
           children: <Widget>[
@@ -202,6 +235,111 @@ class InboxScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  List<Widget> _buildInteractiveCaptureQueue(
+    BuildContext context,
+    List<RawCaptureEntity> pendingCaptures,
+  ) {
+    if (pendingCaptures.isEmpty) {
+      return const <Widget>[
+        QueueItem(
+          title: 'Inbox is clear',
+          caption: 'All local captures are reviewed or finalized.',
+          status: 'Clear',
+        )
+      ];
+    }
+
+    return pendingCaptures.map((capture) {
+      final confidence = capture.classificationConfidence == null
+          ? 'n/a'
+          : capture.classificationConfidence!.toStringAsFixed(2);
+      final title = _captureTitle(capture);
+      final caption =
+          'Detected type: ${capture.classificationType} • Confidence $confidence • Captured ${_dateLabel(capture.captureTime)}';
+      final status = capture.parseStatus == RawCaptureParseStatus.failed
+          ? 'Failed'
+          : (capture.classificationConfidence ?? 1) < 0.7
+              ? 'Low confidence'
+              : 'Review';
+
+      return QueueItem(
+        title: title,
+        caption: caption,
+        status: status,
+        actions: <Widget>[
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => _markCaptureReviewed(capture.id),
+            icon: const Icon(Icons.done_all_rounded),
+            label: const Text('Mark Reviewed'),
+          ),
+          FilledButton.icon(
+            onPressed: _busy ? null : () => _openCaptureReview(capture),
+            icon: const Icon(Icons.edit_note_rounded),
+            label: const Text('Review Task'),
+          ),
+        ],
+      );
+    }).toList(growable: false);
+  }
+
+  Future<void> _markCaptureReviewed(String captureId) async {
+    await _runControllerAction(
+      () => widget.controller.markCaptureReviewed(captureId: captureId),
+      successMessage: 'Capture marked as reviewed.',
+    );
+  }
+
+  Future<void> _openCaptureReview(RawCaptureEntity capture) async {
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return _CaptureReviewDialog(
+          capture: capture,
+          data: widget.data,
+          onSubmit: (CaptureTaskReviewDraft draft) async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.createTaskFromCapture(draft: draft),
+              successMessage: 'Task created from inbox review.',
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _runControllerAction(
+    Future<AppShellData> Function() action, {
+    required String successMessage,
+  }) async {
+    setState(() {
+      _busy = true;
+    });
+    try {
+      final updatedData = await action();
+      widget.onDataChanged?.call(updatedData);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(successMessage)),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
   }
 }
 
@@ -328,16 +466,30 @@ class TasksScreen extends StatelessWidget {
   }
 }
 
-class MeetingsScreen extends StatelessWidget {
-  const MeetingsScreen({super.key, required this.data});
+class MeetingsScreen extends StatefulWidget {
+  const MeetingsScreen({
+    super.key,
+    required this.data,
+    required this.controller,
+    this.onDataChanged,
+  });
 
   final AppShellData data;
+  final AppShellController controller;
+  final ValueChanged<AppShellData>? onDataChanged;
+
+  @override
+  State<MeetingsScreen> createState() => _MeetingsScreenState();
+}
+
+class _MeetingsScreenState extends State<MeetingsScreen> {
+  bool _busy = false;
 
   @override
   Widget build(BuildContext context) {
-    final candidateItems = _meetingCandidates(data);
-    final pendingAiMeetings = _pendingAiMeetings(data);
-    final manualFallbackMeetings = _manualFallbackMeetings(data);
+    final candidateItems = _meetingCandidates(widget.data);
+    final pendingAiMeetings = _pendingAiMeetings(widget.data);
+    final manualFallbackMeetings = _manualFallbackMeetings(widget.data);
 
     return FeatureSectionScaffold(
       title: 'Meeting Review Board',
@@ -354,7 +506,7 @@ class MeetingsScreen extends StatelessWidget {
         MetricData(
             title: 'Draft Meetings',
             value:
-                '${data.meetings.where((meeting) => meeting.reviewState == MeetingReviewState.draftRecording || meeting.reviewState == MeetingReviewState.recordedPendingTranscription).length}',
+                '${widget.data.meetings.where((meeting) => meeting.reviewState == MeetingReviewState.draftRecording || meeting.reviewState == MeetingReviewState.recordedPendingTranscription).length}',
             detail: 'New recordings with local audio already stored.',
             color: const Color(0xFF7A5D42)),
         MetricData(
@@ -372,7 +524,7 @@ class MeetingsScreen extends StatelessWidget {
         MetricData(
             title: 'Review Required',
             value:
-                '${data.meetings.where((meeting) => _reviewStateNeedsAction(meeting.reviewState)).length}',
+                '${widget.data.meetings.where((meeting) => _reviewStateNeedsAction(meeting.reviewState)).length}',
             detail: 'Meetings blocked behind transcript or candidate review.',
             color: const Color(0xFF4D5F8C)),
         MetricData(
@@ -388,21 +540,216 @@ class MeetingsScreen extends StatelessWidget {
               title: 'Meeting Lifecycle Queue',
               subtitle:
                   'Pending AI, failed AI, and manual-only meetings stay editable',
-              children: _buildMeetingLifecycleQueue(data),
+              children: _buildInteractiveMeetingLifecycleQueue(),
             ),
             DetailCard(
-                title: 'Extracted Task Candidates',
-                subtitle: 'Review before promotion',
-                children: _buildMeetingCandidateQueue(candidateItems)),
+              title: 'Extracted Task Candidates',
+              subtitle: 'Review before promotion',
+              children: _buildInteractiveMeetingCandidateQueue(candidateItems),
+            ),
           ],
         ),
         DetailCard(
           title: 'Manual Review Path',
           subtitle: 'Keep moving when AI is unavailable or not trusted',
-          children: _buildManualFallbackRows(data),
+          children: _buildManualFallbackRows(widget.data),
         ),
       ],
     );
+  }
+
+  List<Widget> _buildInteractiveMeetingLifecycleQueue() {
+    final activeMeetings = widget.data.meetings
+        .where((meeting) => meeting.archivedAt == null)
+        .where((meeting) =>
+            _reviewStateNeedsAction(meeting.reviewState) ||
+            _isPendingAiState(meeting.reviewState))
+        .take(5)
+        .toList(growable: false);
+
+    if (activeMeetings.isEmpty) {
+      return const <Widget>[
+        QueueItem(
+          title: 'No active meeting review items',
+          caption:
+              'Pending AI, failed AI, and manual review meetings will surface here automatically.',
+          status: 'Clear',
+        ),
+      ];
+    }
+
+    return activeMeetings.map((meeting) {
+      final capture = _findCaptureForMeeting(widget.data, meeting);
+      return QueueItem(
+        title: meeting.title?.trim().isNotEmpty == true
+            ? meeting.title!
+            : 'Untitled meeting',
+        caption: _meetingLifecycleCaption(meeting, capture),
+        status: _meetingStatusLabel(meeting.reviewState),
+        actions: <Widget>[
+          FilledButton.icon(
+            onPressed: _busy ? null : () => _openMeetingReview(meeting),
+            icon: const Icon(Icons.rate_review_rounded),
+            label: const Text('Review Meeting'),
+          ),
+        ],
+      );
+    }).toList(growable: false);
+  }
+
+  List<Widget> _buildInteractiveMeetingCandidateQueue(
+    List<MeetingTaskCandidateEntity> candidates,
+  ) {
+    if (candidates.isEmpty) {
+      return const <Widget>[
+        QueueItem(
+          title: 'No task candidates yet',
+          caption:
+              'Candidates will appear here after extraction and before task promotion.',
+          status: 'Empty',
+        )
+      ];
+    }
+
+    return candidates.take(3).map((candidate) {
+      final meeting = _meetingForCandidate(widget.data, candidate.id);
+      final caption =
+          'Confidence ${candidate.confidence.toStringAsFixed(2)} • ${candidate.projectName ?? 'No project yet'}';
+      return QueueItem(
+        title: candidate.taskTitle?.trim().isNotEmpty == true
+            ? candidate.taskTitle!
+            : candidate.taskType.name,
+        caption: caption,
+        status: candidate.state.name,
+        actions: meeting == null
+            ? const <Widget>[]
+            : <Widget>[
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : () => _openMeetingReview(meeting),
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: const Text('Open Meeting'),
+                ),
+              ],
+      );
+    }).toList(growable: false);
+  }
+
+  Future<void> _openMeetingReview(MeetingEntity meeting) async {
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return _MeetingReviewDialog(
+          data: widget.data,
+          meeting: meeting,
+          busy: _busy,
+          onSaveDraft: (MeetingReviewDraft draft) async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.updateMeetingDraft(
+                meetingId: meeting.id,
+                draft: draft,
+              ),
+              successMessage: 'Meeting notes saved.',
+            );
+          },
+          onBeginReview: () async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.beginMeetingReview(meetingId: meeting.id),
+              successMessage: 'Meeting moved into review.',
+            );
+          },
+          onMoveToManual: () async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.moveMeetingToManualReview(meetingId: meeting.id),
+              successMessage: 'Meeting moved to manual review.',
+            );
+          },
+          onBeginCandidateResolution: () async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.beginMeetingTaskCandidateResolution(
+                meetingId: meeting.id,
+              ),
+              successMessage: 'Meeting moved to candidate resolution.',
+            );
+          },
+          onFinalize: () async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.finalizeMeeting(meetingId: meeting.id),
+              successMessage: 'Meeting finalized.',
+            );
+          },
+          onAcceptCandidate: (String candidateId, String agenteeName) async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.acceptMeetingCandidateAsNewTask(
+                meetingId: meeting.id,
+                candidateId: candidateId,
+                agenteeName: agenteeName,
+              ),
+              successMessage: 'Candidate promoted to a task.',
+            );
+          },
+          onSaveCandidateProvisional:
+              (String candidateId, String agenteeName) async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.saveMeetingCandidateAsProvisional(
+                meetingId: meeting.id,
+                candidateId: candidateId,
+                agenteeName: agenteeName,
+              ),
+              successMessage: 'Candidate saved as provisional task.',
+            );
+          },
+          onRejectCandidate: (String candidateId) async {
+            Navigator.of(dialogContext).pop();
+            await _runControllerAction(
+              () => widget.controller.rejectMeetingCandidate(
+                meetingId: meeting.id,
+                candidateId: candidateId,
+              ),
+              successMessage: 'Candidate rejected.',
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _runControllerAction(
+    Future<AppShellData> Function() action, {
+    required String successMessage,
+  }) async {
+    setState(() {
+      _busy = true;
+    });
+    try {
+      final updatedData = await action();
+      widget.onDataChanged?.call(updatedData);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(successMessage)),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
   }
 }
 
@@ -1034,11 +1381,13 @@ class QueueItem extends StatelessWidget {
       {super.key,
       required this.title,
       required this.caption,
-      required this.status});
+      required this.status,
+      this.actions = const <Widget>[]});
 
   final String title;
   final String caption;
   final String status;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -1053,26 +1402,553 @@ class QueueItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: const Color(0xFFE2DDD4)),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(title,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 6),
-                  Text(caption,
-                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.4)),
-                ],
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(title,
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 6),
+                      Text(caption,
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(height: 1.4)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                StatusPill(label: status),
+              ],
             ),
-            const SizedBox(width: 12),
-            StatusPill(label: status),
+            if (actions.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: actions,
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CaptureReviewDialog extends StatefulWidget {
+  const _CaptureReviewDialog({
+    required this.capture,
+    required this.data,
+    required this.onSubmit,
+  });
+
+  final RawCaptureEntity capture;
+  final AppShellData data;
+  final Future<void> Function(CaptureTaskReviewDraft draft) onSubmit;
+
+  @override
+  State<_CaptureReviewDialog> createState() => _CaptureReviewDialogState();
+}
+
+class _CaptureReviewDialogState extends State<_CaptureReviewDialog> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _dateController;
+  late final TextEditingController _startTimeController;
+  late final TextEditingController _locationController;
+  late final TextEditingController _workerController;
+  late final TextEditingController _workerPhoneController;
+  late final TextEditingController _coordinatorController;
+  late final TextEditingController _projectManagerController;
+  late final TextEditingController _agenteeController;
+  late String _classificationType;
+  late TaskType _taskType;
+  late TaskStatus _taskStatus;
+  late TaskPriority _taskPriority;
+  String? _projectId;
+  bool _isProvisional = true;
+  bool _needsReview = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _classificationType = _normalizedClassificationType(widget.capture.classificationType);
+    _taskType = TaskType.unknown;
+    _taskStatus = TaskStatus.planned;
+    _taskPriority = TaskPriority.medium;
+    _titleController = TextEditingController(text: _captureTitle(widget.capture));
+    _descriptionController = TextEditingController(text: widget.capture.rawText ?? widget.capture.transcriptText ?? '');
+    _dateController = TextEditingController();
+    _startTimeController = TextEditingController();
+    _locationController = TextEditingController();
+    _workerController = TextEditingController();
+    _workerPhoneController = TextEditingController();
+    _coordinatorController = TextEditingController();
+    _projectManagerController = TextEditingController();
+    _agenteeController = TextEditingController(text: _defaultAgenteeName(widget.data));
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _dateController.dispose();
+    _startTimeController.dispose();
+    _locationController.dispose();
+    _workerController.dispose();
+    _workerPhoneController.dispose();
+    _coordinatorController.dispose();
+    _projectManagerController.dispose();
+    _agenteeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Review Inbox Capture'),
+      content: SizedBox(
+        width: 640,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                widget.capture.rawText ?? widget.capture.transcriptText ?? 'No raw text available.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 18),
+              DropdownButtonFormField<String>(
+                initialValue: _classificationType,
+                decoration: const InputDecoration(labelText: 'Detected Type'),
+                items: const <DropdownMenuItem<String>>[
+                  DropdownMenuItem(value: 'task', child: Text('Task')),
+                  DropdownMenuItem(value: 'project', child: Text('Project')),
+                  DropdownMenuItem(value: 'meeting', child: Text('Meeting')),
+                  DropdownMenuItem(value: 'mixed', child: Text('Mixed')),
+                  DropdownMenuItem(value: 'unknown', child: Text('Unknown')),
+                ],
+                onChanged: (String? value) {
+                  setState(() {
+                    _classificationType = value ?? 'unknown';
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String?>(
+                initialValue: _projectId,
+                decoration: const InputDecoration(labelText: 'Linked Project'),
+                items: <DropdownMenuItem<String?>>[
+                  const DropdownMenuItem<String?>(value: null, child: Text('No project link')),
+                  ...widget.data.projects
+                      .where((project) => project.archivedAt == null)
+                      .map(
+                        (project) => DropdownMenuItem<String?>(
+                          value: project.id,
+                          child: Text(project.projectName),
+                        ),
+                      ),
+                ],
+                onChanged: (String? value) {
+                  setState(() {
+                    _projectId = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<TaskType>(
+                initialValue: _taskType,
+                decoration: const InputDecoration(labelText: 'Task Type'),
+                items: TaskType.values
+                    .map(
+                      (taskType) => DropdownMenuItem<TaskType>(
+                        value: taskType,
+                        child: Text(_taskTypeLabel(taskType)),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (TaskType? value) {
+                  setState(() {
+                    _taskType = value ?? TaskType.unknown;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Task Title'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _descriptionController,
+                minLines: 3,
+                maxLines: 6,
+                decoration: const InputDecoration(labelText: 'Description'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _dateController,
+                decoration: const InputDecoration(labelText: 'Scheduled Date (YYYY-MM-DD)'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _startTimeController,
+                decoration: const InputDecoration(labelText: 'Start Time'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _locationController,
+                decoration: const InputDecoration(labelText: 'Location'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _workerController,
+                decoration: const InputDecoration(labelText: 'Worker Name'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _workerPhoneController,
+                decoration: const InputDecoration(labelText: 'Worker Phone'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _coordinatorController,
+                decoration: const InputDecoration(labelText: 'Coordinator'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _projectManagerController,
+                decoration: const InputDecoration(labelText: 'Project Manager'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _agenteeController,
+                decoration: const InputDecoration(labelText: 'Agentee Name'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<TaskStatus>(
+                initialValue: _taskStatus,
+                decoration: const InputDecoration(labelText: 'Task Status'),
+                items: TaskStatus.values
+                    .map(
+                      (status) => DropdownMenuItem<TaskStatus>(
+                        value: status,
+                        child: Text(_taskStatusLabel(status)),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (TaskStatus? value) {
+                  setState(() {
+                    _taskStatus = value ?? TaskStatus.planned;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<TaskPriority>(
+                initialValue: _taskPriority,
+                decoration: const InputDecoration(labelText: 'Priority'),
+                items: TaskPriority.values
+                    .map(
+                      (priority) => DropdownMenuItem<TaskPriority>(
+                        value: priority,
+                        child: Text(_taskPriorityLabel(priority)),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (TaskPriority? value) {
+                  setState(() {
+                    _taskPriority = value ?? TaskPriority.medium;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _isProvisional,
+                onChanged: (bool value) {
+                  setState(() {
+                    _isProvisional = value;
+                  });
+                },
+                title: const Text('Save as provisional'),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _needsReview,
+                onChanged: (bool value) {
+                  setState(() {
+                    _needsReview = value;
+                  });
+                },
+                title: const Text('Keep task review flag'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _classificationType == 'task' ? _submit : null,
+          child: const Text('Create Task'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _submit() {
+    return widget.onSubmit(
+      CaptureTaskReviewDraft(
+        captureId: widget.capture.id,
+        classificationType: _classificationType,
+        classificationConfidence: widget.capture.classificationConfidence ?? 0.85,
+        projectId: _projectId,
+        taskType: _taskType,
+        taskTitle: _titleController.text,
+        description: _descriptionController.text,
+        scheduledDateText: _dateController.text,
+        startTimeLocal: _startTimeController.text,
+        locationSnapshot: _locationController.text,
+        workerName: _workerController.text,
+        workerPhone: _workerPhoneController.text,
+        coordinatorName: _coordinatorController.text,
+        projectManagerName: _projectManagerController.text,
+        agenteeName: _agenteeController.text.trim().isEmpty
+            ? _defaultAgenteeName(widget.data)
+            : _agenteeController.text.trim(),
+        status: _taskStatus,
+        priority: _taskPriority,
+        isProvisional: _isProvisional,
+        needsReview: _needsReview,
+      ),
+    );
+  }
+}
+
+class _MeetingReviewDialog extends StatefulWidget {
+  const _MeetingReviewDialog({
+    required this.data,
+    required this.meeting,
+    required this.busy,
+    required this.onSaveDraft,
+    required this.onBeginReview,
+    required this.onMoveToManual,
+    required this.onBeginCandidateResolution,
+    required this.onFinalize,
+    required this.onAcceptCandidate,
+    required this.onSaveCandidateProvisional,
+    required this.onRejectCandidate,
+  });
+
+  final AppShellData data;
+  final MeetingEntity meeting;
+  final bool busy;
+  final Future<void> Function(MeetingReviewDraft draft) onSaveDraft;
+  final Future<void> Function() onBeginReview;
+  final Future<void> Function() onMoveToManual;
+  final Future<void> Function() onBeginCandidateResolution;
+  final Future<void> Function() onFinalize;
+  final Future<void> Function(String candidateId, String agenteeName) onAcceptCandidate;
+  final Future<void> Function(String candidateId, String agenteeName) onSaveCandidateProvisional;
+  final Future<void> Function(String candidateId) onRejectCandidate;
+
+  @override
+  State<_MeetingReviewDialog> createState() => _MeetingReviewDialogState();
+}
+
+class _MeetingReviewDialogState extends State<_MeetingReviewDialog> {
+  late final TextEditingController _transcriptController;
+  late final TextEditingController _summaryController;
+  late final TextEditingController _minutesController;
+  late final TextEditingController _agenteeController;
+  late final Set<String> _projectIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _transcriptController = TextEditingController(text: widget.meeting.transcriptText ?? '');
+    _summaryController = TextEditingController(text: widget.meeting.summary ?? '');
+    _minutesController = TextEditingController(text: widget.meeting.minutesMarkdown ?? '');
+    _agenteeController = TextEditingController(text: _defaultAgenteeName(widget.data));
+    _projectIds = widget.meeting.projectIds.toSet();
+  }
+
+  @override
+  void dispose() {
+    _transcriptController.dispose();
+    _summaryController.dispose();
+    _minutesController.dispose();
+    _agenteeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final linkedProjects = widget.data.projects
+        .where((project) => project.archivedAt == null)
+        .toList(growable: false);
+
+    return AlertDialog(
+      title: Text(widget.meeting.title ?? 'Review Meeting'),
+      content: SizedBox(
+        width: 760,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'State: ${_meetingStatusLabel(widget.meeting.reviewState)}',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _transcriptController,
+                minLines: 4,
+                maxLines: 8,
+                decoration: const InputDecoration(labelText: 'Transcript'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _summaryController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(labelText: 'Summary'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _minutesController,
+                minLines: 4,
+                maxLines: 8,
+                decoration: const InputDecoration(labelText: 'Minutes Markdown'),
+              ),
+              const SizedBox(height: 16),
+              Text('Linked Projects', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: linkedProjects
+                    .map(
+                      (project) => FilterChip(
+                        label: Text(project.projectName),
+                        selected: _projectIds.contains(project.id),
+                        onSelected: (bool selected) {
+                          setState(() {
+                            if (selected) {
+                              _projectIds.add(project.id);
+                            } else {
+                              _projectIds.remove(project.id);
+                            }
+                          });
+                        },
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+              if (widget.meeting.taskCandidates.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 20),
+                Text('Task Candidates', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _agenteeController,
+                  decoration: const InputDecoration(labelText: 'Agentee Name For Task Actions'),
+                ),
+                const SizedBox(height: 12),
+                ...widget.meeting.taskCandidates.map(_buildCandidateCard),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: widget.busy ? null : () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+        if (_canMoveToManual(widget.meeting.reviewState))
+          OutlinedButton(
+            onPressed: widget.busy ? null : widget.onMoveToManual,
+            child: const Text('Manual Review'),
+          ),
+        if (_canBeginReview(widget.meeting.reviewState))
+          OutlinedButton(
+            onPressed: widget.busy ? null : widget.onBeginReview,
+            child: const Text('Begin Review'),
+          ),
+        if (_canBeginCandidateResolution(widget.meeting))
+          OutlinedButton(
+            onPressed: widget.busy ? null : widget.onBeginCandidateResolution,
+            child: const Text('Candidate Resolution'),
+          ),
+        TextButton(
+          onPressed: widget.busy ? null : _saveDraft,
+          child: const Text('Save Notes'),
+        ),
+        if (_canFinalize(widget.meeting.reviewState))
+          FilledButton(
+            onPressed: widget.busy ? null : widget.onFinalize,
+            child: const Text('Finalize'),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCandidateCard(MeetingTaskCandidateEntity candidate) {
+    final agenteeName = _agenteeController.text.trim().isEmpty
+        ? _defaultAgenteeName(widget.data)
+        : _agenteeController.text.trim();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: QueueItem(
+        title: candidate.taskTitle?.trim().isNotEmpty == true
+            ? candidate.taskTitle!
+            : candidate.taskType.name,
+        caption: _joinParts(<String?>[
+          'Confidence ${candidate.confidence.toStringAsFixed(2)}',
+          candidate.projectName,
+          candidate.sourceSnippet,
+        ]),
+        status: candidate.state.name,
+        actions: widget.meeting.reviewState == MeetingReviewState.taskCandidateResolution
+            ? <Widget>[
+                FilledButton.tonal(
+                  onPressed: widget.busy
+                      ? null
+                      : () => widget.onAcceptCandidate(candidate.id, agenteeName),
+                  child: const Text('Create Task'),
+                ),
+                OutlinedButton(
+                  onPressed: widget.busy
+                      ? null
+                      : () => widget.onSaveCandidateProvisional(candidate.id, agenteeName),
+                  child: const Text('Save Provisional'),
+                ),
+                TextButton(
+                  onPressed: widget.busy ? null : () => widget.onRejectCandidate(candidate.id),
+                  child: const Text('Reject'),
+                ),
+              ]
+            : const <Widget>[],
+      ),
+    );
+  }
+
+  Future<void> _saveDraft() {
+    return widget.onSaveDraft(
+      MeetingReviewDraft(
+        transcriptText: _transcriptController.text,
+        summary: _summaryController.text,
+        minutesMarkdown: _minutesController.text,
+        projectIds: _projectIds.toList(growable: false),
       ),
     );
   }
@@ -1341,35 +2217,6 @@ List<String> _recentExchangeFeed(AppShellData data) {
   return lines;
 }
 
-List<Widget> _buildCaptureQueue(List pendingCaptures) {
-  if (pendingCaptures.isEmpty) {
-    return const <Widget>[
-      QueueItem(
-          title: 'Inbox is clear',
-          caption: 'All local captures are reviewed or finalized.',
-          status: 'Clear')
-    ];
-  }
-  return pendingCaptures.map<Widget>((capture) {
-    final confidence = capture.classificationConfidence == null
-        ? 'n/a'
-        : capture.classificationConfidence!.toStringAsFixed(2);
-    final title = capture.rawText?.split('\n').first.trim().isNotEmpty == true
-        ? capture.rawText!.split('\n').first.trim()
-        : capture.transcriptText?.split('\n').first.trim().isNotEmpty == true
-            ? capture.transcriptText!.split('\n').first.trim()
-            : 'Captured ${capture.channel.name}';
-    final caption =
-        'Detected type: ${capture.classificationType} • Confidence $confidence • Captured ${_dateLabel(capture.captureTime)}';
-    final status = capture.parseStatus == RawCaptureParseStatus.failed
-        ? 'Failed'
-        : (capture.classificationConfidence ?? 1) < 0.7
-            ? 'Low confidence'
-            : 'Review';
-    return QueueItem(title: title, caption: caption, status: status);
-  }).toList(growable: false);
-}
-
 List<Widget> _buildProjectCards(List projects, AppShellData data) {
   if (projects.isEmpty) {
     return const <Widget>[
@@ -1445,61 +2292,6 @@ List<MeetingTaskCandidateEntity> _meetingCandidates(AppShellData data) {
       .expand((meeting) => meeting.taskCandidates)
       .take(5)
       .toList(growable: false);
-}
-
-List<Widget> _buildMeetingCandidateQueue(
-    List<MeetingTaskCandidateEntity> candidates) {
-  if (candidates.isEmpty) {
-    return const <Widget>[
-      QueueItem(
-          title: 'No task candidates yet',
-          caption:
-              'Candidates will appear here after extraction and before task promotion.',
-          status: 'Empty')
-    ];
-  }
-  return candidates.take(3).map((candidate) {
-    final title = candidate.taskTitle?.trim().isNotEmpty == true
-        ? candidate.taskTitle!
-        : candidate.taskType.name;
-    final caption =
-        'Confidence ${candidate.confidence.toStringAsFixed(2)} • ${candidate.projectName ?? 'No project yet'}';
-    return QueueItem(
-        title: title, caption: caption, status: candidate.state.name);
-  }).toList(growable: false);
-}
-
-List<Widget> _buildMeetingLifecycleQueue(AppShellData data) {
-  final activeMeetings = data.meetings
-      .where((meeting) => meeting.archivedAt == null)
-      .where((meeting) =>
-          _reviewStateNeedsAction(meeting.reviewState) ||
-          _isPendingAiState(meeting.reviewState))
-      .take(5)
-      .toList(growable: false);
-
-  if (activeMeetings.isEmpty) {
-    return const <Widget>[
-      QueueItem(
-        title: 'No active meeting review items',
-        caption:
-            'Pending AI, failed AI, and manual review meetings will surface here automatically.',
-        status: 'Clear',
-      ),
-    ];
-  }
-
-  return activeMeetings.map((meeting) {
-    final capture = _findCaptureForMeeting(data, meeting);
-    final title = meeting.title?.trim().isNotEmpty == true
-        ? meeting.title!
-        : 'Untitled meeting';
-    return QueueItem(
-      title: title,
-      caption: _meetingLifecycleCaption(meeting, capture),
-      status: _meetingStatusLabel(meeting.reviewState),
-    );
-  }).toList(growable: false);
 }
 
 List<Widget> _buildManualFallbackRows(AppShellData data) {
@@ -1641,6 +2433,113 @@ String _joinParts(List<String?> parts) {
       .whereType<String>()
       .where((value) => value.trim().isNotEmpty)
       .join(' • ');
+}
+
+String _captureTitle(RawCaptureEntity capture) {
+  if (capture.rawText?.split('\n').first.trim().isNotEmpty == true) {
+    return capture.rawText!.split('\n').first.trim();
+  }
+  if (capture.transcriptText?.split('\n').first.trim().isNotEmpty == true) {
+    return capture.transcriptText!.split('\n').first.trim();
+  }
+  return 'Captured ${capture.channel.name}';
+}
+
+String _normalizedClassificationType(String value) {
+  const supported = <String>{'task', 'project', 'meeting', 'mixed', 'unknown'};
+  return supported.contains(value) ? value : 'unknown';
+}
+
+String _defaultAgenteeName(AppShellData data) {
+  for (final task in data.tasks) {
+    if (task.agenteeName.trim().isNotEmpty) {
+      return task.agenteeName.trim();
+    }
+  }
+  return 'Local Agentee';
+}
+
+String _taskTypeLabel(TaskType taskType) {
+  switch (taskType) {
+    case TaskType.siteSurvey:
+      return 'Site Survey';
+    case TaskType.installation:
+      return 'Installation';
+    case TaskType.tuning:
+      return 'Tuning';
+    case TaskType.handover:
+      return 'Handover';
+    case TaskType.maintenance:
+      return 'Maintenance';
+    case TaskType.unknown:
+      return 'Unknown';
+  }
+}
+
+String _taskStatusLabel(TaskStatus status) {
+  switch (status) {
+    case TaskStatus.planned:
+      return 'Planned';
+    case TaskStatus.inProgress:
+      return 'In Progress';
+    case TaskStatus.blocked:
+      return 'Blocked';
+    case TaskStatus.completed:
+      return 'Completed';
+    case TaskStatus.cancelled:
+      return 'Cancelled';
+  }
+}
+
+String _taskPriorityLabel(TaskPriority priority) {
+  switch (priority) {
+    case TaskPriority.low:
+      return 'Low';
+    case TaskPriority.medium:
+      return 'Medium';
+    case TaskPriority.high:
+      return 'High';
+    case TaskPriority.critical:
+      return 'Critical';
+  }
+}
+
+MeetingEntity? _meetingForCandidate(AppShellData data, String candidateId) {
+  for (final meeting in data.meetings) {
+    for (final candidate in meeting.taskCandidates) {
+      if (candidate.id == candidateId) {
+        return meeting;
+      }
+    }
+  }
+  return null;
+}
+
+bool _canMoveToManual(MeetingReviewState state) {
+  return state == MeetingReviewState.recordedPendingTranscription ||
+      state == MeetingReviewState.transcriptionFailed ||
+      state == MeetingReviewState.transcribedPendingExtraction ||
+      state == MeetingReviewState.extractionFailed;
+}
+
+bool _canBeginReview(MeetingReviewState state) {
+  return state == MeetingReviewState.reviewRequired ||
+      state == MeetingReviewState.manualReviewOnly ||
+      state == MeetingReviewState.reopened;
+}
+
+bool _canBeginCandidateResolution(MeetingEntity meeting) {
+  return meeting.taskCandidates.isNotEmpty &&
+      (meeting.reviewState == MeetingReviewState.reviewInProgress ||
+          meeting.reviewState == MeetingReviewState.reviewRequired);
+}
+
+bool _canFinalize(MeetingReviewState state) {
+  return state == MeetingReviewState.manualReviewOnly ||
+      state == MeetingReviewState.reviewRequired ||
+      state == MeetingReviewState.reviewInProgress ||
+      state == MeetingReviewState.taskCandidateResolution ||
+      state == MeetingReviewState.reopened;
 }
 
 bool _isPendingAiState(MeetingReviewState state) {
