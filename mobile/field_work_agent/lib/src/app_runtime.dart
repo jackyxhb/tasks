@@ -11,6 +11,7 @@ import '../data/database/app_database.dart';
 import '../data/database/database_executor.dart';
 import '../domain/entities/export_run_entity.dart';
 import '../domain/entities/import_run_entity.dart';
+import '../domain/entities/import_export_bundle_entity.dart';
 import '../domain/entities/meeting_entity.dart';
 import '../domain/entities/project_entity.dart';
 import '../domain/entities/raw_capture_entity.dart';
@@ -22,6 +23,9 @@ import '../domain/enums/task_status.dart';
 import '../domain/enums/task_type.dart';
 import '../features/capture/application/capture_classification.dart';
 import '../features/capture/application/capture_classification_service.dart';
+import '../features/exchange/application/exchange_models.dart';
+import '../features/exchange/application/export_bundle_creator_service.dart';
+import '../features/exchange/application/import_preview_and_apply_service.dart';
 import '../features/meetings/application/meeting_manual_fallback_service.dart';
 import '../features/meetings/application/meeting_review_editor_service.dart';
 import '../features/meetings/application/meeting_review_models.dart';
@@ -29,6 +33,10 @@ import '../features/meetings/application/meeting_review_service.dart';
 import '../features/meetings/application/meeting_task_candidate_resolution_service.dart';
 import '../features/projects/application/project_draft.dart';
 import '../features/projects/application/project_crud_service.dart';
+import '../features/reports/application/report_models.dart';
+import '../features/reports/application/report_service.dart';
+import '../features/search/application/search_models.dart';
+import '../features/search/application/search_service.dart';
 import '../features/tasks/application/task_crud_service.dart';
 import '../features/tasks/application/task_models.dart';
 
@@ -136,6 +144,43 @@ abstract class AppShellController {
   Future<AppShellData> rejectMeetingCandidate({
     required String meetingId,
     required String candidateId,
+    String? actorName,
+  });
+
+  Future<GroupedSearchResults> searchRecords({
+    required SearchRequest request,
+  });
+
+  Future<GeneratedReport> generateDailyTaskListReport({
+    required DateTime date,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  });
+
+  Future<GeneratedReport> generateProjectSummaryReport({
+    required String projectId,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  });
+
+  Future<GeneratedReport> generateMeetingMinutesPackReport({
+    required ReportFilter filter,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  });
+
+  Future<ImportExportBundleEntity> createExportBundle({
+    required ExportScopeRequest scope,
+    String? actorName,
+  });
+
+  Future<ImportPreviewResult> previewImportBundle({
+    required String relativeImportPath,
+    String? actorName,
+  });
+
+  Future<AppShellData> applyImportBundle({
+    required String relativeImportPath,
     String? actorName,
   });
 }
@@ -286,6 +331,109 @@ class StaticAppShellController implements AppShellController {
   Future<AppShellData> rejectMeetingCandidate({
     required String meetingId,
     required String candidateId,
+    String? actorName,
+  }) async => data;
+
+  @override
+  Future<GroupedSearchResults> searchRecords({required SearchRequest request}) async {
+    return const GroupedSearchResults(
+      projects: <SearchHit>[],
+      tasks: <SearchHit>[],
+      meetings: <SearchHit>[],
+      rawCaptures: <SearchHit>[],
+      people: <SearchHit>[],
+    );
+  }
+
+  @override
+  Future<GeneratedReport> generateDailyTaskListReport({
+    required DateTime date,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) async {
+    return const GeneratedReport(
+      reportType: 'daily_task_list',
+      summary: 'No report generation is configured for the static controller.',
+      payload: <String, Object?>{},
+    );
+  }
+
+  @override
+  Future<GeneratedReport> generateProjectSummaryReport({
+    required String projectId,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) async {
+    return const GeneratedReport(
+      reportType: 'project_summary',
+      summary: 'No report generation is configured for the static controller.',
+      payload: <String, Object?>{},
+    );
+  }
+
+  @override
+  Future<GeneratedReport> generateMeetingMinutesPackReport({
+    required ReportFilter filter,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) async {
+    return const GeneratedReport(
+      reportType: 'meeting_minutes_pack',
+      summary: 'No report generation is configured for the static controller.',
+      payload: <String, Object?>{},
+    );
+  }
+
+  @override
+  Future<ImportExportBundleEntity> createExportBundle({
+    required ExportScopeRequest scope,
+    String? actorName,
+  }) async {
+    return ImportExportBundleEntity(
+      schemaVersion: 'v1',
+      bundleId: 'static_bundle',
+      exportedAt: DateTime.utc(2026, 3, 10),
+      sourceAppName: 'field_work_agent',
+      sourceAppVersion: '0.1.0',
+      scope: ExportScope(type: scope.type, value: scope.value),
+      projects: const <Map<String, Object?>>[],
+      tasks: const <Map<String, Object?>>[],
+      meetings: const <Map<String, Object?>>[],
+      people: const <Map<String, Object?>>[],
+      attachmentsManifest: const <AttachmentManifestEntry>[],
+    );
+  }
+
+  @override
+  Future<ImportPreviewResult> previewImportBundle({
+    required String relativeImportPath,
+    String? actorName,
+  }) async {
+    return ImportPreviewResult(
+      bundle: ImportExportBundleEntity(
+        schemaVersion: 'v1',
+        bundleId: 'static_preview',
+        exportedAt: DateTime.utc(2026, 3, 10),
+        sourceAppName: 'field_work_agent',
+        sourceAppVersion: '0.1.0',
+        scope: const ExportScope(type: 'all'),
+        projects: const <Map<String, Object?>>[],
+        tasks: const <Map<String, Object?>>[],
+        meetings: const <Map<String, Object?>>[],
+        people: const <Map<String, Object?>>[],
+        attachmentsManifest: const <AttachmentManifestEntry>[],
+      ),
+      projectCount: 0,
+      taskCount: 0,
+      meetingCount: 0,
+      peopleCount: 0,
+      duplicateIds: const <String>[],
+    );
+  }
+
+  @override
+  Future<AppShellData> applyImportBundle({
+    required String relativeImportPath,
     String? actorName,
   }) async => data;
 }
@@ -603,6 +751,98 @@ class LocalAppShellController implements AppShellController {
     });
   }
 
+  @override
+  Future<GroupedSearchResults> searchRecords({required SearchRequest request}) {
+    return _withRuntime((runtime) {
+      return runtime.searchService.search(request);
+    });
+  }
+
+  @override
+  Future<GeneratedReport> generateDailyTaskListReport({
+    required DateTime date,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) {
+      return runtime.reportService.generateDailyTaskList(
+        date: date,
+        outputFormat: outputFormat,
+        actorName: actorName,
+      );
+    });
+  }
+
+  @override
+  Future<GeneratedReport> generateProjectSummaryReport({
+    required String projectId,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) {
+      return runtime.reportService.generateProjectSummary(
+        projectId: projectId,
+        outputFormat: outputFormat,
+        actorName: actorName,
+      );
+    });
+  }
+
+  @override
+  Future<GeneratedReport> generateMeetingMinutesPackReport({
+    required ReportFilter filter,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) {
+      return runtime.reportService.generateMeetingMinutesPack(
+        filter: filter,
+        outputFormat: outputFormat,
+        actorName: actorName,
+      );
+    });
+  }
+
+  @override
+  Future<ImportExportBundleEntity> createExportBundle({
+    required ExportScopeRequest scope,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) {
+      return runtime.exportBundleCreatorService.createBundle(
+        scope: scope,
+        actorName: actorName,
+      );
+    });
+  }
+
+  @override
+  Future<ImportPreviewResult> previewImportBundle({
+    required String relativeImportPath,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) {
+      return runtime.importPreviewAndApplyService.previewBundle(
+        relativeImportPath: relativeImportPath,
+        actorName: actorName,
+      );
+    });
+  }
+
+  @override
+  Future<AppShellData> applyImportBundle({
+    required String relativeImportPath,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.importPreviewAndApplyService.applyBundle(
+        relativeImportPath: relativeImportPath,
+        actorName: actorName,
+      );
+      return runtime.loadData();
+    });
+  }
+
   Future<T> _withRuntime<T>(Future<T> Function(_LocalAppRuntime runtime) action) async {
     final supportDirectory = await getApplicationSupportDirectory();
     final migrationsDirectory = await _materializeMigrations(supportDirectory);
@@ -779,6 +1019,10 @@ class _LocalAppRuntime {
     required this.projectCrudService,
     required this.taskCrudService,
     required this.captureClassificationService,
+    required this.searchService,
+    required this.reportService,
+    required this.exportBundleCreatorService,
+    required this.importPreviewAndApplyService,
     required this.meetingReviewService,
     required this.meetingManualFallbackService,
     required this.meetingReviewEditorService,
@@ -790,6 +1034,10 @@ class _LocalAppRuntime {
   final ProjectCrudService projectCrudService;
   final TaskCrudService taskCrudService;
   final CaptureClassificationService captureClassificationService;
+  final SearchService searchService;
+  final ReportService reportService;
+  final ExportBundleCreatorService exportBundleCreatorService;
+  final ImportPreviewAndApplyService importPreviewAndApplyService;
   final MeetingReviewService meetingReviewService;
   final MeetingManualFallbackService meetingManualFallbackService;
   final MeetingReviewEditorService meetingReviewEditorService;
@@ -807,7 +1055,8 @@ class _LocalAppRuntime {
       opener: _SqfliteDatabaseOpener(databasePath: databasePath),
       migrationsDirectoryPath: migrationsDirectory.path,
     );
-    await LocalFileStorageBootstrap.initialize(rootDirectory: storageDirectory);
+    final storageService =
+      await LocalFileStorageBootstrap.initialize(rootDirectory: storageDirectory);
 
     final auditLogService = AuditLogService(repository: database.auditLogs);
     return _LocalAppRuntime(
@@ -823,6 +1072,34 @@ class _LocalAppRuntime {
       ),
       captureClassificationService: CaptureClassificationService(
         repository: database.rawCaptures,
+        auditLogService: auditLogService,
+      ),
+      searchService: SearchService(executor: database.executor),
+      reportService: ReportService(
+        projectRepository: database.projects,
+        taskRepository: database.tasks,
+        meetingRepository: database.meetings,
+        reportRunRepository: database.reportRuns,
+        fileStorageService: storageService,
+        auditLogService: auditLogService,
+      ),
+      exportBundleCreatorService: ExportBundleCreatorService(
+        projectRepository: database.projects,
+        taskRepository: database.tasks,
+        meetingRepository: database.meetings,
+        personRepository: database.people,
+        attachmentRepository: database.attachments,
+        exportRunRepository: database.exportRuns,
+        fileStorageService: storageService,
+        auditLogService: auditLogService,
+      ),
+      importPreviewAndApplyService: ImportPreviewAndApplyService(
+        projectRepository: database.projects,
+        taskRepository: database.tasks,
+        meetingRepository: database.meetings,
+        personRepository: database.people,
+        importRunRepository: database.importRuns,
+        fileStorageService: storageService,
         auditLogService: auditLogService,
       ),
       meetingReviewService: MeetingReviewService(

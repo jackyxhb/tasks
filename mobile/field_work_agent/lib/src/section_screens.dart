@@ -10,8 +10,12 @@ import '../domain/enums/raw_capture_parse_status.dart';
 import '../domain/enums/task_priority.dart';
 import '../domain/enums/task_type.dart';
 import '../domain/enums/task_status.dart';
+import '../domain/entities/import_export_bundle_entity.dart';
+import '../features/exchange/application/exchange_models.dart';
 import '../features/meetings/application/meeting_review_models.dart';
 import '../features/projects/application/project_draft.dart';
+import '../features/reports/application/report_models.dart';
+import '../features/search/application/search_models.dart';
 import '../features/tasks/application/task_models.dart';
 import 'app_runtime.dart';
 import 'app_sections.dart';
@@ -60,13 +64,25 @@ class SectionBody extends StatelessWidget {
           onDataChanged: onDataChanged,
         );
       case AppSection.search:
-        return const SearchScreen();
+        return SearchScreen(controller: controller);
       case AppSection.reports:
-        return ReportsScreen(data: data);
+        return ReportsScreen(
+          data: data,
+          controller: controller,
+          onDataChanged: onDataChanged,
+        );
       case AppSection.importSection:
-        return ImportScreen(data: data);
+        return ImportScreen(
+          data: data,
+          controller: controller,
+          onDataChanged: onDataChanged,
+        );
       case AppSection.exportSection:
-        return ExportScreen(data: data);
+        return ExportScreen(
+          data: data,
+          controller: controller,
+          onDataChanged: onDataChanged,
+        );
       case AppSection.settings:
         return const SettingsScreen();
       case AppSection.archive:
@@ -1086,115 +1102,246 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
   }
 }
 
-class SearchScreen extends StatelessWidget {
-  const SearchScreen({super.key});
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({super.key, required this.controller});
+
+  final AppShellController controller;
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  late final TextEditingController _queryController;
+  late final TextEditingController _projectController;
+  late final TextEditingController _workerController;
+  bool _includeArchived = true;
+  bool _busy = false;
+  String? _error;
+  GroupedSearchResults? _results;
+
+  @override
+  void initState() {
+    super.initState();
+    _queryController = TextEditingController();
+    _projectController = TextEditingController();
+    _workerController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    _projectController.dispose();
+    _workerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final totalResults = _results == null
+        ? 0
+        : _results!.projects.length +
+            _results!.tasks.length +
+            _results!.meetings.length +
+            _results!.rawCaptures.length +
+            _results!.people.length;
+
     return FeatureSectionScaffold(
       title: 'Global Search',
       summary:
-          'Grouped discovery across projects, tasks, meetings, raw captures, and people with structured filters on top.',
+          'Grouped discovery across projects, tasks, meetings, raw captures, and people with structured local filters.',
       accent: AppSection.search.accent,
       actions: const <ActionData>[
         ActionData(label: 'Projects', icon: Icons.apartment_rounded),
         ActionData(label: 'Meetings', icon: Icons.groups_rounded),
         ActionData(label: 'Raw Captures', icon: Icons.perm_media_rounded),
       ],
-      metrics: const <MetricData>[
-        MetricData(
+      metrics: <MetricData>[
+        const MetricData(
             title: 'Indexed Types',
             value: '5',
             detail: 'Projects, tasks, meetings, people, raw captures.',
             color: Color(0xFF5A5E9A)),
         MetricData(
-            title: 'Scoped Filters',
-            value: '8',
-            detail:
-                'Date, OEM, worker, coordinator, manager, source, type, status.',
-            color: Color(0xFF2F6B63)),
+            title: 'Current Results',
+            value: '$totalResults',
+            detail: 'Grouped hits returned from the local search service.',
+            color: const Color(0xFF2F6B63)),
       ],
-      sections: const <Widget>[
+      sections: <Widget>[
         Card(
           child: Padding(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 TextField(
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    hintText:
-                        'Search projects, tasks, meetings, raw captures, and people',
+                  controller: _queryController,
+                  decoration: const InputDecoration(
+                    hintText: 'Search projects, tasks, meetings, raw captures, and people',
+                    labelText: 'Search Query',
                     prefixIcon: Icon(Icons.manage_search_rounded),
                     border: OutlineInputBorder(),
                   ),
                 ),
-                SizedBox(height: 16),
-                FilterStrip(labels: <String>[
-                  'Date Range',
-                  'Project Name',
-                  'OEM',
-                  'Worker',
-                  'Coordinator',
-                  'Project Manager',
-                  'Task Type',
-                  'Status'
-                ]),
+                const SizedBox(height: 12),
+                ResponsiveGrid(
+                  children: <Widget>[
+                    TextField(
+                      controller: _projectController,
+                      decoration: const InputDecoration(
+                        labelText: 'Project Filter',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    TextField(
+                      controller: _workerController,
+                      decoration: const InputDecoration(
+                        labelText: 'Worker Filter',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Include Archived'),
+                      value: _includeArchived,
+                      onChanged: (bool value) {
+                        setState(() {
+                          _includeArchived = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: <Widget>[
+                    FilledButton.icon(
+                      onPressed: _busy ? null : _runSearch,
+                      icon: const Icon(Icons.search_rounded),
+                      label: const Text('Run Search'),
+                    ),
+                    if (_results != null)
+                      TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () {
+                                setState(() {
+                                  _results = null;
+                                  _error = null;
+                                });
+                              },
+                        child: const Text('Clear Results'),
+                      ),
+                  ],
+                ),
+                if (_error != null) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
               ],
             ),
           ),
         ),
-        ResponsiveGrid(
-          children: <Widget>[
-            DetailCard(
-              title: 'Search Scope',
-              subtitle: 'Grouped result sections',
-              children: <Widget>[
-                InfoRow(
-                    label: 'Projects',
-                    value: 'Preview recent activity and open tasks.'),
-                InfoRow(
-                    label: 'Tasks',
-                    value:
-                        'Match on notes, location, task title, and worker fields.'),
-                InfoRow(
-                    label: 'Meetings',
-                    value: 'Show transcript and summary snippets for context.'),
-              ],
-            ),
-            DetailCard(
-              title: 'Recent Result Pattern',
-              subtitle: 'Snippet-first review',
-              children: <Widget>[
-                QueueItem(
-                    title: 'Meeting transcript match',
-                    caption:
-                        '"handover checklist" appears in corrected transcript and summary.',
-                    status: 'Meetings'),
-                QueueItem(
-                    title: 'Task notes match',
-                    caption:
-                        'Maintenance note references the same shaft access issue.',
-                    status: 'Tasks'),
-                QueueItem(
-                    title: 'Raw capture match',
-                    caption:
-                        'Original WhatsApp paste preserved for traceability.',
-                    status: 'Raw captures'),
-              ],
-            ),
-          ],
-        ),
+        if (_results == null)
+          const DetailCard(
+            title: 'Search Scope',
+            subtitle: 'Grouped result sections',
+            children: <Widget>[
+              InfoRow(label: 'Projects', value: 'Preview recent activity and open tasks.'),
+              InfoRow(label: 'Tasks', value: 'Match on notes, location, task title, and worker fields.'),
+              InfoRow(label: 'Meetings', value: 'Show transcript and summary snippets for context.'),
+            ],
+          )
+        else
+          ResponsiveGrid(
+            children: <Widget>[
+              _SearchResultsCard(title: 'Projects', hits: _results!.projects),
+              _SearchResultsCard(title: 'Tasks', hits: _results!.tasks),
+              _SearchResultsCard(title: 'Meetings', hits: _results!.meetings),
+              _SearchResultsCard(title: 'Raw Captures', hits: _results!.rawCaptures),
+              _SearchResultsCard(title: 'People', hits: _results!.people),
+            ],
+          ),
       ],
     );
   }
+
+  Future<void> _runSearch() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final results = await widget.controller.searchRecords(
+        request: SearchRequest(
+          query: _queryController.text,
+          filters: SearchFilters(
+            projectName: _projectController.text,
+            workerName: _workerController.text,
+            includeArchived: _includeArchived,
+          ),
+          limitPerGroup: 10,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _results = results;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
+  }
 }
 
-class ReportsScreen extends StatelessWidget {
-  const ReportsScreen({super.key, required this.data});
+class ReportsScreen extends StatefulWidget {
+  const ReportsScreen({super.key, required this.data, required this.controller, this.onDataChanged});
 
   final AppShellData data;
+  final AppShellController controller;
+  final ValueChanged<AppShellData>? onDataChanged;
+
+  @override
+  State<ReportsScreen> createState() => _ReportsScreenState();
+}
+
+class _ReportsScreenState extends State<ReportsScreen> {
+  String _selectedReportType = 'daily';
+  ReportOutputFormat _outputFormat = ReportOutputFormat.inApp;
+  late final TextEditingController _dateController;
+  late final TextEditingController _projectController;
+  GeneratedReport? _report;
+  String? _error;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateController = TextEditingController(text: DateTime.now().toUtc().toIso8601String().split('T').first);
+    _projectController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _projectController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1205,59 +1352,202 @@ class ReportsScreen extends StatelessWidget {
       accent: AppSection.reports.accent,
       actions: const <ActionData>[
         ActionData(label: 'Daily Task List', icon: Icons.today_rounded),
-        ActionData(
-            label: 'Meeting Minutes Pack', icon: Icons.library_books_rounded),
+        ActionData(label: 'Meeting Minutes Pack', icon: Icons.library_books_rounded),
         ActionData(label: 'Project Summary', icon: Icons.summarize_rounded),
       ],
       metrics: <MetricData>[
         const MetricData(
             title: 'Templates',
-            value: '6',
-            detail:
-                'Daily, by-project, worker summary, meeting pack, project summary, custom.',
+            value: '3',
+            detail: 'Daily task list, project summary, meeting minutes pack.',
             color: Color(0xFF6D4B73)),
         MetricData(
-            title: 'Formats',
-            value:
-                '${data.reportRuns.map((run) => run.outputFormat).toSet().length.clamp(1, 4)}',
-            detail: 'In-app summary, PDF placeholder, CSV, JSON.',
+            title: 'Runs Logged',
+            value: '${widget.data.reportRuns.length}',
+            detail: 'Tracked local report generation history.',
             color: const Color(0xFF3E7B7D)),
       ],
       sections: <Widget>[
-        ResponsiveGrid(
-          children: <Widget>[
-            const DetailCard(
-              title: 'Available Reports',
-              subtitle: 'Core local outputs',
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                InfoRow(
-                    label: 'Daily task list',
-                    value:
-                        'Today and upcoming work across the local schedule.'),
-                InfoRow(
-                    label: 'Worker summary',
-                    value: 'Assigned work grouped by worker and date range.'),
-                InfoRow(
-                    label: 'Meeting minutes pack',
-                    value:
-                        'Finalized meeting summaries and extracted decisions.'),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedReportType,
+                  decoration: const InputDecoration(labelText: 'Report Type'),
+                  items: const <DropdownMenuItem<String>>[
+                    DropdownMenuItem<String>(value: 'daily', child: Text('Daily Task List')),
+                    DropdownMenuItem<String>(value: 'project', child: Text('Project Summary')),
+                    DropdownMenuItem<String>(value: 'minutes', child: Text('Meeting Minutes Pack')),
+                  ],
+                  onChanged: (String? value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _selectedReportType = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<ReportOutputFormat>(
+                  initialValue: _outputFormat,
+                  decoration: const InputDecoration(labelText: 'Output Format'),
+                  items: ReportOutputFormat.values
+                      .map(
+                        (format) => DropdownMenuItem<ReportOutputFormat>(
+                          value: format,
+                          child: Text(format.storageValue),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: (ReportOutputFormat? value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _outputFormat = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _dateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Date (YYYY-MM-DD)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _projectController,
+                  decoration: const InputDecoration(
+                    labelText: 'Project Id For Project/Minutes Reports',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _busy ? null : _generateReport,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('Generate Report'),
+                ),
+                if (_error != null) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
               ],
             ),
-            DetailCard(
-                title: 'Recent Runs',
-                subtitle: 'Local history',
-                children: _buildReportQueue(data)),
-          ],
+          ),
+        ),
+        if (_report != null)
+          DetailCard(
+            title: 'Last Generated Report',
+            subtitle: _report!.reportType,
+            children: <Widget>[
+              InfoRow(label: 'Summary', value: _report!.summary),
+              if (_report!.outputPath != null)
+                InfoRow(label: 'Output Path', value: _report!.outputPath!),
+            ],
+          ),
+        DetailCard(
+          title: 'Recent Runs',
+          subtitle: 'Local history',
+          children: _buildReportQueue(widget.data),
         ),
       ],
     );
   }
+
+  Future<void> _generateReport() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final GeneratedReport report;
+      if (_selectedReportType == 'project') {
+        if (_projectController.text.trim().isEmpty) {
+          throw StateError('Project id is required for project summary reports.');
+        }
+        report = await widget.controller.generateProjectSummaryReport(
+          projectId: _projectController.text.trim(),
+          outputFormat: _outputFormat,
+        );
+      } else if (_selectedReportType == 'minutes') {
+        report = await widget.controller.generateMeetingMinutesPackReport(
+          filter: ReportFilter(
+            projectId: _projectController.text.trim().isEmpty
+                ? null
+                : _projectController.text.trim(),
+          ),
+          outputFormat: _outputFormat,
+        );
+      } else {
+        final parsedDate = DateTime.tryParse(_dateController.text.trim());
+        if (parsedDate == null) {
+          throw StateError('A valid date is required for daily task reports.');
+        }
+        report = await widget.controller.generateDailyTaskListReport(
+          date: parsedDate,
+          outputFormat: _outputFormat,
+        );
+      }
+      final updatedData = await widget.controller.load();
+      widget.onDataChanged?.call(updatedData);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _report = report;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
+  }
 }
 
-class ImportScreen extends StatelessWidget {
-  const ImportScreen({super.key, required this.data});
+class ImportScreen extends StatefulWidget {
+  const ImportScreen({super.key, required this.data, required this.controller, this.onDataChanged});
 
   final AppShellData data;
+  final AppShellController controller;
+  final ValueChanged<AppShellData>? onDataChanged;
+
+  @override
+  State<ImportScreen> createState() => _ImportScreenState();
+}
+
+class _ImportScreenState extends State<ImportScreen> {
+  late final TextEditingController _pathController;
+  ImportPreviewResult? _preview;
+  String? _error;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pathController = TextEditingController(text: 'imports/sample-bundle.json');
+  }
+
+  @override
+  void dispose() {
+    _pathController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1269,108 +1559,334 @@ class ImportScreen extends StatelessWidget {
       actions: const <ActionData>[
         ActionData(label: 'Pick Bundle', icon: Icons.folder_open_rounded),
         ActionData(label: 'Preview Manifest', icon: Icons.preview_rounded),
-        ActionData(
-            label: 'Apply Import',
-            icon: Icons.playlist_add_check_circle_rounded),
+        ActionData(label: 'Apply Import', icon: Icons.playlist_add_check_circle_rounded),
       ],
       metrics: <MetricData>[
         MetricData(
             title: 'Imports',
-            value: '${data.importRuns.length}',
+            value: '${widget.data.importRuns.length}',
             detail: 'Recent local bundle previews and applies.',
             color: const Color(0xFF3E7B7D)),
         MetricData(
             title: 'Duplicates',
-            value: '${_duplicateRiskCount(data)}',
+            value: '${_preview?.duplicateIds.length ?? _duplicateRiskCount(widget.data)}',
             detail: 'Likely overlaps that need merge or create decisions.',
             color: const Color(0xFFC06B37)),
       ],
       sections: <Widget>[
-        const DetailCard(
-          title: 'Import Flow',
-          subtitle: 'Preview before write',
-          children: <Widget>[
-            InfoRow(label: '1', value: 'Pick bundle and parse manifest.'),
-            InfoRow(
-                label: '2',
-                value: 'Preview projects, tasks, meetings, and people.'),
-            InfoRow(
-                label: '3',
-                value:
-                    'Review duplicate candidates and choose merge or create.'),
-            InfoRow(
-                label: '4',
-                value: 'Apply import and store local result summary.'),
-          ],
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                TextField(
+                  controller: _pathController,
+                  decoration: const InputDecoration(
+                    labelText: 'Relative Import Path',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: <Widget>[
+                    FilledButton.icon(
+                      onPressed: _busy ? null : _previewBundle,
+                      icon: const Icon(Icons.preview_rounded),
+                      label: const Text('Preview Import'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _busy || _preview == null ? null : _applyBundle,
+                      icon: const Icon(Icons.playlist_add_check_circle_rounded),
+                      label: const Text('Apply Import'),
+                    ),
+                  ],
+                ),
+                if (_error != null) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
+              ],
+            ),
+          ),
         ),
+        if (_preview != null)
+          DetailCard(
+            title: 'Preview Summary',
+            subtitle: _preview!.bundle.bundleId,
+            children: <Widget>[
+              InfoRow(label: 'Projects', value: '${_preview!.projectCount}'),
+              InfoRow(label: 'Tasks', value: '${_preview!.taskCount}'),
+              InfoRow(label: 'Meetings', value: '${_preview!.meetingCount}'),
+              InfoRow(label: 'People', value: '${_preview!.peopleCount}'),
+              InfoRow(
+                label: 'Duplicates',
+                value: _preview!.duplicateIds.isEmpty
+                    ? 'None'
+                    : _preview!.duplicateIds.join(', '),
+              ),
+            ],
+          ),
         DetailCard(
           title: 'Duplicate Candidates',
           subtitle: 'Review queue',
-          children: _buildImportQueue(data),
+          children: _buildImportQueue(widget.data),
         ),
       ],
     );
   }
+
+  Future<void> _previewBundle() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final preview = await widget.controller.previewImportBundle(
+        relativeImportPath: _pathController.text.trim(),
+      );
+      final updatedData = await widget.controller.load();
+      widget.onDataChanged?.call(updatedData);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _preview = preview;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _applyBundle() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final updatedData = await widget.controller.applyImportBundle(
+        relativeImportPath: _pathController.text.trim(),
+      );
+      widget.onDataChanged?.call(updatedData);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _preview = null;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
+  }
 }
 
-class ExportScreen extends StatelessWidget {
-  const ExportScreen({super.key, required this.data});
+class ExportScreen extends StatefulWidget {
+  const ExportScreen({super.key, required this.data, required this.controller, this.onDataChanged});
 
   final AppShellData data;
+  final AppShellController controller;
+  final ValueChanged<AppShellData>? onDataChanged;
+
+  @override
+  State<ExportScreen> createState() => _ExportScreenState();
+}
+
+class _ExportScreenState extends State<ExportScreen> {
+  String _scopeType = 'all';
+  late final TextEditingController _scopeValueController;
+  ImportExportBundleEntity? _bundle;
+  String? _error;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scopeValueController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _scopeValueController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return FeatureSectionScaffold(
       title: 'Export Builder',
       summary:
-          'Package selected local records into a canonical bundle with attachment manifest and optional secondary report outputs.',
+          'Package selected local records into a canonical bundle with attachment manifest and optional secondary outputs.',
       accent: AppSection.exportSection.accent,
       actions: const <ActionData>[
         ActionData(label: 'Choose Scope', icon: Icons.select_all_rounded),
-        ActionData(label: 'Formats', icon: Icons.data_object_rounded),
+        ActionData(label: 'Manifest', icon: Icons.inventory_2_rounded),
         ActionData(label: 'Generate Bundle', icon: Icons.inventory_rounded),
       ],
       metrics: <MetricData>[
         MetricData(
             title: 'Recent Exports',
-            value: '${data.exportRuns.length}',
+            value: '${widget.data.exportRuns.length}',
             detail: 'Current export history from the local package.',
             color: const Color(0xFF9C6B3C)),
         MetricData(
-            title: 'Selected Projects',
-            value:
-                '${data.projects.where((project) => project.archivedAt == null).take(2).length}',
-            detail: 'Current export scope across local project data.',
+            title: 'Bundle Records',
+            value: _bundle == null
+                ? '0'
+                : '${_bundle!.projects.length + _bundle!.tasks.length + _bundle!.meetings.length + _bundle!.people.length}',
+            detail: 'Current generated bundle record count.',
             color: const Color(0xFF4D5F8C)),
       ],
-      sections: const <Widget>[
-        DetailCard(
-          title: 'Selected Scope',
-          subtitle: 'Examples from the current draft',
-          children: <Widget>[
-            InfoRow(
-                label: 'Projects',
-                value: 'Pompallier Ponsonby, City Rail Lift Modernization'),
-            InfoRow(label: 'Date range', value: '2026-03-01 to 2026-03-09'),
-            InfoRow(
-                label: 'Meetings',
-                value:
-                    'Include finalized coordination and review meetings only'),
-          ],
+      sections: <Widget>[
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                DropdownButtonFormField<String>(
+                  initialValue: _scopeType,
+                  decoration: const InputDecoration(labelText: 'Export Scope Type'),
+                  items: const <DropdownMenuItem<String>>[
+                    DropdownMenuItem<String>(value: 'all', child: Text('All Local Records')),
+                    DropdownMenuItem<String>(value: 'project', child: Text('Project Id Or Name')),
+                  ],
+                  onChanged: (String? value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _scopeType = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _scopeValueController,
+                  decoration: const InputDecoration(
+                    labelText: 'Scope Value',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _busy ? null : _createBundle,
+                  icon: const Icon(Icons.inventory_rounded),
+                  label: const Text('Generate Bundle'),
+                ),
+                if (_error != null) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
+              ],
+            ),
+          ),
         ),
+        if (_bundle != null)
+          DetailCard(
+            title: 'Generated Bundle',
+            subtitle: _bundle!.bundleId,
+            children: <Widget>[
+              InfoRow(label: 'Projects', value: '${_bundle!.projects.length}'),
+              InfoRow(label: 'Tasks', value: '${_bundle!.tasks.length}'),
+              InfoRow(label: 'Meetings', value: '${_bundle!.meetings.length}'),
+              InfoRow(label: 'People', value: '${_bundle!.people.length}'),
+              InfoRow(label: 'Attachments', value: '${_bundle!.attachmentsManifest.length}'),
+            ],
+          ),
         DetailCard(
-          title: 'Output Formats',
-          subtitle: 'Canonical plus secondary outputs',
-          children: <Widget>[
-            FilterStrip(labels: <String>[
-              'Bundle JSON',
-              'CSV',
-              'JSON Reports',
-              'Attachments'
-            ]),
-          ],
+          title: 'Recent Exports',
+          subtitle: 'Local bundle history',
+          children: _buildExportQueue(widget.data),
         ),
       ],
+    );
+  }
+
+  Future<void> _createBundle() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final bundle = await widget.controller.createExportBundle(
+        scope: ExportScopeRequest(
+          type: _scopeType,
+          value: _scopeValueController.text.trim().isEmpty
+              ? null
+              : _scopeValueController.text.trim(),
+        ),
+      );
+      final updatedData = await widget.controller.load();
+      widget.onDataChanged?.call(updatedData);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _bundle = bundle;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
+  }
+}
+
+class _SearchResultsCard extends StatelessWidget {
+  const _SearchResultsCard({required this.title, required this.hits});
+
+  final String title;
+  final List<SearchHit> hits;
+
+  @override
+  Widget build(BuildContext context) {
+    return DetailCard(
+      title: title,
+      subtitle: '${hits.length} result${hits.length == 1 ? '' : 's'}',
+      children: hits.isEmpty
+          ? const <Widget>[InfoRow(label: 'Results', value: 'No matches found.')]
+          : hits
+              .map(
+                (hit) => QueueItem(
+                  title: hit.title,
+                  caption: _joinParts(<String?>[hit.subtitle, hit.snippet]),
+                  status: hit.archived ? 'Archived' : hit.recordType,
+                ),
+              )
+              .toList(growable: false),
     );
   }
 }
@@ -3470,6 +3986,24 @@ List<Widget> _buildImportQueue(AppShellData data) {
         caption:
             'Status: ${run.status} • Imported ${_dateLabel(run.importTime)}',
         status: run.status);
+  }).toList(growable: false);
+}
+
+List<Widget> _buildExportQueue(AppShellData data) {
+  if (data.exportRuns.isEmpty) {
+    return const <Widget>[
+      QueueItem(
+          title: 'No exports yet',
+          caption: 'Generated bundle history will appear here after the first export.',
+          status: 'Empty')
+    ];
+  }
+  return data.exportRuns.take(3).map((run) {
+    return QueueItem(
+        title: run.bundleName,
+        caption:
+            'Scope: ${run.exportScopeType}${run.exportScopeValue == null ? '' : ' • ${run.exportScopeValue}'} • Created ${_dateLabel(run.createdAt)}',
+        status: 'Export');
   }).toList(growable: false);
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:field_work_agent/domain/entities/export_run_entity.dart';
 import 'package:field_work_agent/domain/entities/import_run_entity.dart';
+import 'package:field_work_agent/domain/entities/import_export_bundle_entity.dart';
 import 'package:field_work_agent/domain/entities/meeting_entity.dart';
 import 'package:field_work_agent/domain/entities/meeting_task_candidate_entity.dart';
 import 'package:field_work_agent/domain/entities/project_entity.dart';
@@ -16,8 +17,11 @@ import 'package:field_work_agent/domain/enums/task_priority.dart';
 import 'package:field_work_agent/domain/enums/task_status.dart';
 import 'package:field_work_agent/domain/enums/task_candidate_state.dart';
 import 'package:field_work_agent/domain/enums/task_type.dart';
+import 'package:field_work_agent/features/exchange/application/exchange_models.dart';
 import 'package:field_work_agent/features/meetings/application/meeting_review_models.dart';
 import 'package:field_work_agent/features/projects/application/project_draft.dart';
+import 'package:field_work_agent/features/reports/application/report_models.dart';
+import 'package:field_work_agent/features/search/application/search_models.dart';
 import 'package:field_work_agent/features/tasks/application/task_models.dart';
 import 'package:field_work_agent/src/app_runtime.dart';
 import 'package:field_work_agent/src/app_sections.dart';
@@ -407,6 +411,167 @@ void main() {
     expect(controller.manualFallbackDraft!.minutesMarkdown, '- Manual minute');
   });
 
+  testWidgets('search screen runs grouped local search', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const data = AppShellData.empty();
+    final controller = _FakeAppShellController(data);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SectionBody(
+            section: AppSection.search,
+            data: data,
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Search Query'),
+      'handover',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Run Search'));
+    await tester.pumpAndSettle();
+
+    expect(controller.searchRequest, isNotNull);
+    expect(controller.searchRequest!.query, 'handover');
+    expect(find.text('Meeting transcript match'), findsOneWidget);
+  });
+
+  testWidgets('reports screen generates a local report', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final now = DateTime.utc(2026, 3, 10, 9, 0);
+    final data = AppShellData(
+      projects: <ProjectEntity>[
+        ProjectEntity(
+          id: 'project_1',
+          projectName: 'Pompallier Ponsonby',
+          projectNameNormalized: 'pompallier ponsonby',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      tasks: const <TaskEntity>[],
+      meetings: const <MeetingEntity>[],
+      rawCaptures: const <RawCaptureEntity>[],
+      reportRuns: const <ReportRunEntity>[],
+      importRuns: const <ImportRunEntity>[],
+      exportRuns: const <ExportRunEntity>[],
+    );
+    final controller = _FakeAppShellController(data);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SectionBody(
+            section: AppSection.reports,
+            data: data,
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Generate Report'));
+    await tester.pumpAndSettle();
+
+    expect(controller.generatedDailyReportDate, isNotNull);
+    expect(find.text('Last Generated Report'), findsOneWidget);
+    expect(find.textContaining('Daily task list ready'), findsOneWidget);
+  });
+
+  testWidgets('import and export screens call bundle workflows', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final now = DateTime.utc(2026, 3, 10, 9, 0);
+    final data = AppShellData(
+      projects: <ProjectEntity>[
+        ProjectEntity(
+          id: 'project_1',
+          projectName: 'Pompallier Ponsonby',
+          projectNameNormalized: 'pompallier ponsonby',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      tasks: const <TaskEntity>[],
+      meetings: const <MeetingEntity>[],
+      rawCaptures: const <RawCaptureEntity>[],
+      reportRuns: const <ReportRunEntity>[],
+      importRuns: const <ImportRunEntity>[],
+      exportRuns: const <ExportRunEntity>[],
+    );
+    final controller = _FakeAppShellController(data);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SectionBody(
+            section: AppSection.importSection,
+            data: data,
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Relative Import Path'),
+      'imports/pompallier.json',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Preview Import'));
+    await tester.pumpAndSettle();
+
+    expect(controller.previewImportPath, 'imports/pompallier.json');
+    expect(find.text('Preview Summary'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Apply Import'));
+    await tester.pumpAndSettle();
+
+    expect(controller.appliedImportPath, 'imports/pompallier.json');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SectionBody(
+            section: AppSection.exportSection,
+            data: data,
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Generate Bundle'));
+    await tester.pumpAndSettle();
+
+    expect(controller.exportScopeRequest, isNotNull);
+    expect(find.text('Generated Bundle'), findsOneWidget);
+  });
+
   testWidgets('project screen submits project draft', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1400, 1800);
     tester.view.devicePixelRatio = 1.0;
@@ -538,6 +703,13 @@ class _FakeAppShellController implements AppShellController {
   String? mergedMeetingId;
   String? mergedCandidateId;
   String? mergedTaskId;
+  SearchRequest? searchRequest;
+  DateTime? generatedDailyReportDate;
+  String? generatedProjectReportId;
+  ReportFilter? generatedMinutesFilter;
+  String? previewImportPath;
+  String? appliedImportPath;
+  ExportScopeRequest? exportScopeRequest;
 
   @override
   Future<AppShellData> load() async => data;
@@ -618,8 +790,108 @@ class _FakeAppShellController implements AppShellController {
   Future<AppShellData> archiveTask({required String taskId, String? actorName}) async => data;
 
   @override
+  Future<AppShellData> applyImportBundle({
+    required String relativeImportPath,
+    String? actorName,
+  }) async {
+    appliedImportPath = relativeImportPath;
+    return data;
+  }
+
+  @override
+  Future<ImportExportBundleEntity> createExportBundle({
+    required ExportScopeRequest scope,
+    String? actorName,
+  }) async {
+    exportScopeRequest = scope;
+    return ImportExportBundleEntity(
+      schemaVersion: 'v1',
+      bundleId: 'bundle_1',
+      exportedAt: DateTime.utc(2026, 3, 10),
+      sourceAppName: 'field_work_agent',
+      sourceAppVersion: '0.1.0',
+      scope: ExportScope(type: scope.type, value: scope.value),
+      projects: const <Map<String, Object?>>[],
+      tasks: const <Map<String, Object?>>[],
+      meetings: const <Map<String, Object?>>[],
+      people: const <Map<String, Object?>>[],
+      attachmentsManifest: const <AttachmentManifestEntry>[],
+    );
+  }
+
+  @override
+  Future<GeneratedReport> generateDailyTaskListReport({
+    required DateTime date,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) async {
+    generatedDailyReportDate = date;
+    return const GeneratedReport(
+      reportType: 'daily_task_list',
+      summary: 'Daily task list ready',
+      payload: <String, Object?>{'task_count': 1},
+    );
+  }
+
+  @override
+  Future<GeneratedReport> generateMeetingMinutesPackReport({
+    required ReportFilter filter,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) async {
+    generatedMinutesFilter = filter;
+    return const GeneratedReport(
+      reportType: 'meeting_minutes_pack',
+      summary: 'Meeting minutes pack ready',
+      payload: <String, Object?>{'meeting_count': 1},
+    );
+  }
+
+  @override
+  Future<GeneratedReport> generateProjectSummaryReport({
+    required String projectId,
+    required ReportOutputFormat outputFormat,
+    String? actorName,
+  }) async {
+    generatedProjectReportId = projectId;
+    return const GeneratedReport(
+      reportType: 'project_summary',
+      summary: 'Project summary ready',
+      payload: <String, Object?>{'project_count': 1},
+    );
+  }
+
+  @override
   Future<AppShellData> rejectMeetingCandidate({required String meetingId, required String candidateId, String? actorName}) async =>
       data;
+
+  @override
+  Future<ImportPreviewResult> previewImportBundle({
+    required String relativeImportPath,
+    String? actorName,
+  }) async {
+    previewImportPath = relativeImportPath;
+    return ImportPreviewResult(
+      bundle: ImportExportBundleEntity(
+        schemaVersion: 'v1',
+        bundleId: 'preview_bundle',
+        exportedAt: DateTime.utc(2026, 3, 10),
+        sourceAppName: 'field_work_agent',
+        sourceAppVersion: '0.1.0',
+        scope: const ExportScope(type: 'all'),
+        projects: const <Map<String, Object?>>[],
+        tasks: const <Map<String, Object?>>[],
+        meetings: const <Map<String, Object?>>[],
+        people: const <Map<String, Object?>>[],
+        attachmentsManifest: const <AttachmentManifestEntry>[],
+      ),
+      projectCount: 1,
+      taskCount: 2,
+      meetingCount: 1,
+      peopleCount: 1,
+      duplicateIds: const <String>['project_1'],
+    );
+  }
 
   @override
   Future<AppShellData> saveMeetingCandidateAsProvisional({
@@ -628,6 +900,25 @@ class _FakeAppShellController implements AppShellController {
     required String agenteeName,
     String? actorName,
   }) async => data;
+
+  @override
+  Future<GroupedSearchResults> searchRecords({required SearchRequest request}) async {
+    searchRequest = request;
+    return const GroupedSearchResults(
+      projects: <SearchHit>[],
+      tasks: <SearchHit>[],
+      meetings: <SearchHit>[
+        SearchHit(
+          recordType: 'meeting',
+          recordId: 'meeting_1',
+          title: 'Meeting transcript match',
+          snippet: 'handover checklist appears in corrected transcript and summary.',
+        ),
+      ],
+      rawCaptures: <SearchHit>[],
+      people: <SearchHit>[],
+    );
+  }
 
   @override
   Future<AppShellData> updateMeetingCandidate({
