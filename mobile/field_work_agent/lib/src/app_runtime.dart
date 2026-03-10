@@ -26,12 +26,45 @@ import '../features/meetings/application/meeting_review_editor_service.dart';
 import '../features/meetings/application/meeting_review_models.dart';
 import '../features/meetings/application/meeting_review_service.dart';
 import '../features/meetings/application/meeting_task_candidate_resolution_service.dart';
+import '../features/projects/application/project_draft.dart';
 import '../features/projects/application/project_crud_service.dart';
 import '../features/tasks/application/task_crud_service.dart';
 import '../features/tasks/application/task_models.dart';
 
 abstract class AppShellController {
   Future<AppShellData> load();
+
+  Future<AppShellData> createProject({
+    required ProjectDraft draft,
+    String? actorName,
+  });
+
+  Future<AppShellData> updateProject({
+    required String projectId,
+    required ProjectDraft draft,
+    String? actorName,
+  });
+
+  Future<AppShellData> archiveProject({
+    required String projectId,
+    String? actorName,
+  });
+
+  Future<AppShellData> createTask({
+    required TaskDraft draft,
+    String? actorName,
+  });
+
+  Future<AppShellData> updateTask({
+    required String taskId,
+    required TaskDraft draft,
+    String? actorName,
+  });
+
+  Future<AppShellData> archiveTask({
+    required String taskId,
+    String? actorName,
+  });
 
   Future<AppShellData> markCaptureReviewed({
     required String captureId,
@@ -143,6 +176,32 @@ class StaticAppShellController implements AppShellController {
   Future<AppShellData> load() async => data;
 
   @override
+  Future<AppShellData> createProject({required ProjectDraft draft, String? actorName}) async => data;
+
+  @override
+  Future<AppShellData> updateProject({
+    required String projectId,
+    required ProjectDraft draft,
+    String? actorName,
+  }) async => data;
+
+  @override
+  Future<AppShellData> archiveProject({required String projectId, String? actorName}) async => data;
+
+  @override
+  Future<AppShellData> createTask({required TaskDraft draft, String? actorName}) async => data;
+
+  @override
+  Future<AppShellData> updateTask({
+    required String taskId,
+    required TaskDraft draft,
+    String? actorName,
+  }) async => data;
+
+  @override
+  Future<AppShellData> archiveTask({required String taskId, String? actorName}) async => data;
+
+  @override
   Future<AppShellData> markCaptureReviewed({required String captureId, String? actorName}) async => data;
 
   @override
@@ -205,6 +264,78 @@ class LocalAppShellController implements AppShellController {
   @override
   Future<AppShellData> load() async {
     return _withRuntime((runtime) => runtime.loadData());
+  }
+
+  @override
+  Future<AppShellData> createProject({
+    required ProjectDraft draft,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.projectCrudService.create(draft, actorName: actorName);
+      return runtime.loadData();
+    });
+  }
+
+  @override
+  Future<AppShellData> updateProject({
+    required String projectId,
+    required ProjectDraft draft,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.projectCrudService.update(
+        projectId,
+        draft,
+        actorName: actorName,
+      );
+      return runtime.loadData();
+    });
+  }
+
+  @override
+  Future<AppShellData> archiveProject({
+    required String projectId,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.projectCrudService.archive(projectId, actorName: actorName);
+      return runtime.loadData();
+    });
+  }
+
+  @override
+  Future<AppShellData> createTask({
+    required TaskDraft draft,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.taskCrudService.create(draft, actorName: actorName);
+      return runtime.loadData();
+    });
+  }
+
+  @override
+  Future<AppShellData> updateTask({
+    required String taskId,
+    required TaskDraft draft,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.taskCrudService.update(taskId, draft, actorName: actorName);
+      return runtime.loadData();
+    });
+  }
+
+  @override
+  Future<AppShellData> archiveTask({
+    required String taskId,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      await runtime.taskCrudService.archive(taskId, actorName: actorName);
+      return runtime.loadData();
+    });
   }
 
   @override
