@@ -17,6 +17,7 @@ import '../domain/entities/project_entity.dart';
 import '../domain/entities/raw_capture_entity.dart';
 import '../domain/entities/report_run_entity.dart';
 import '../domain/entities/task_entity.dart';
+import '../domain/enums/raw_capture_channel.dart';
 import '../domain/enums/raw_capture_parse_status.dart';
 import '../domain/enums/task_priority.dart';
 import '../domain/enums/task_status.dart';
@@ -77,6 +78,11 @@ abstract class AppShellController {
 
   Future<AppShellData> markCaptureReviewed({
     required String captureId,
+    String? actorName,
+  });
+
+  Future<AppShellData> createRawTextCapture({
+    required String textContent,
     String? actorName,
   });
 
@@ -265,6 +271,12 @@ class StaticAppShellController implements AppShellController {
 
   @override
   Future<AppShellData> markCaptureReviewed({required String captureId, String? actorName}) async => data;
+
+  @override
+  Future<AppShellData> createRawTextCapture({
+    required String textContent,
+    String? actorName,
+  }) async => data;
 
   @override
   Future<AppShellData> createTaskFromCapture({required CaptureTaskReviewDraft draft, String? actorName}) async =>
@@ -539,6 +551,28 @@ class LocalAppShellController implements AppShellController {
         capture: capture,
         actorName: actorName,
       );
+      return runtime.loadData();
+    });
+  }
+
+  @override
+  Future<AppShellData> createRawTextCapture({
+    required String textContent,
+    String? actorName,
+  }) {
+    return _withRuntime((runtime) async {
+      final now = DateTime.now().toUtc();
+      final id = 'capture-${DateTime.now().millisecondsSinceEpoch}';
+      final capture = RawCaptureEntity(
+        id: id,
+        channel: RawCaptureChannel.manualText,
+        captureTime: now,
+        classificationType: 'unclassified',
+        parseStatus: RawCaptureParseStatus.newCapture,
+        createdAt: now,
+        rawText: textContent,
+      );
+      await runtime.database.rawCaptures.save(capture);
       return runtime.loadData();
     });
   }

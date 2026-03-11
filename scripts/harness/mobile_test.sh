@@ -11,6 +11,7 @@ cd "$package_dir"
 flutter test -d macos integration_test/app_launch_flow_test.dart
 flutter test -d macos integration_test/export_bundle_flow_test.dart
 flutter test -d macos integration_test/task_creation_flow_test.dart
+flutter test -d macos integration_test/text_capture_flow_test.dart
 
 flutter test \
 	test/acceptance_workflows_test.dart \

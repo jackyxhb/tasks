@@ -753,6 +753,12 @@ class _FakeAppShellController implements AppShellController {
   }
 
   @override
+  Future<AppShellData> createRawTextCapture({
+    required String textContent,
+    String? actorName,
+  }) async => data;
+
+  @override
   Future<AppShellData> finalizeMeeting({required String meetingId, String? actorName}) async => data;
 
   @override

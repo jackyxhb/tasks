@@ -4,6 +4,7 @@ import '../domain/entities/meeting_entity.dart';
 import '../domain/entities/raw_capture_entity.dart';
 import '../domain/entities/task_entity.dart';
 import '../features/capture/presentation/inbox_screen.dart';
+import '../features/capture/presentation/text_capture_input_dialog.dart';
 import '../features/exchange/presentation/exchange_screens.dart';
 import '../features/meetings/presentation/meetings_screen.dart';
 import '../domain/enums/meeting_review_state.dart';
@@ -36,7 +37,12 @@ class SectionBody extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (section) {
       case AppSection.home:
-        return HomeDashboard(data: data, onNavigate: onNavigate);
+        return HomeDashboard(
+          data: data,
+          controller: controller,
+          onDataChanged: onDataChanged,
+          onNavigate: onNavigate,
+        );
       case AppSection.inbox:
         return InboxScreen(
           data: data,
@@ -89,21 +95,56 @@ class SectionBody extends StatelessWidget {
   }
 }
 
-class HomeDashboard extends StatelessWidget {
+class HomeDashboard extends StatefulWidget {
   const HomeDashboard({
     super.key,
     required this.data,
+    required this.controller,
+    this.onDataChanged,
     this.onNavigate,
   });
 
   final AppShellData data;
+  final AppShellController controller;
+  final ValueChanged<AppShellData>? onDataChanged;
   final ValueChanged<AppSection>? onNavigate;
 
   @override
+  State<HomeDashboard> createState() => _HomeDashboardState();
+}
+
+class _HomeDashboardState extends State<HomeDashboard> {
+  bool _busy = false;
+
+  Future<void> _showTextCaptureDialog(BuildContext context) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) => const TextCaptureInputDialog(),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      setState(() => _busy = true);
+      try {
+        final updated = await widget.controller.createRawTextCapture(
+          textContent: result,
+        );
+        widget.onDataChanged?.call(updated);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Text captured and added to Inbox.')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final todayTasks = _todayTasks(data);
-    final recentMeetings = _recentMeetings(data);
-    final exchangeFeed = _recentExchangeFeed(data);
+    final todayTasks = _todayTasks(widget.data);
+    final recentMeetings = _recentMeetings(widget.data);
+    final exchangeFeed = _recentExchangeFeed(widget.data);
 
     return FeatureSectionScaffold(
       title: 'Daily operations at a glance',
@@ -114,50 +155,48 @@ class HomeDashboard extends StatelessWidget {
         ActionData(
           label: 'Paste Text',
           icon: Icons.content_paste_go_rounded,
-          onPressed: onNavigate == null
-              ? null
-              : () => onNavigate!(AppSection.inbox),
+          onPressed: _busy ? null : () => _showTextCaptureDialog(context),
         ),
         ActionData(
           label: 'Record Meeting',
           icon: Icons.mic_rounded,
-          onPressed: onNavigate == null
+          onPressed: widget.onNavigate == null
               ? null
-              : () => onNavigate!(AppSection.meetings),
+              : () => widget.onNavigate!(AppSection.meetings),
         ),
         ActionData(
           label: 'New Task',
           icon: Icons.task_alt_rounded,
-          onPressed: onNavigate == null
+          onPressed: widget.onNavigate == null
               ? null
-              : () => onNavigate!(AppSection.tasks),
+              : () => widget.onNavigate!(AppSection.tasks),
         ),
         ActionData(
           label: 'New Project',
           icon: Icons.apartment_rounded,
-          onPressed: onNavigate == null
+          onPressed: widget.onNavigate == null
               ? null
-              : () => onNavigate!(AppSection.projects),
+              : () => widget.onNavigate!(AppSection.projects),
         ),
         ActionData(
           label: 'Import Bundle',
           icon: Icons.download_rounded,
-          onPressed: onNavigate == null
+          onPressed: widget.onNavigate == null
               ? null
-              : () => onNavigate!(AppSection.importSection),
+              : () => widget.onNavigate!(AppSection.importSection),
         ),
         ActionData(
           label: 'Search',
           icon: Icons.manage_search_rounded,
-          onPressed: onNavigate == null
+          onPressed: widget.onNavigate == null
               ? null
-              : () => onNavigate!(AppSection.search),
+              : () => widget.onNavigate!(AppSection.search),
         ),
       ],
       metrics: <MetricData>[
         MetricData(
             title: 'Inbox Pending',
-            value: '${_pendingCaptures(data).length}',
+            value: '${_pendingCaptures(widget.data).length}',
             detail:
                 'Low-confidence items and duplicate warnings surfaced first.',
             color: const Color(0xFFC06B37)),
@@ -173,7 +212,7 @@ class HomeDashboard extends StatelessWidget {
             color: const Color(0xFF4D5F8C)),
         MetricData(
             title: 'Exports / Imports',
-            value: '${data.importRuns.length + data.exportRuns.length}',
+            value: '${widget.data.importRuns.length + widget.data.exportRuns.length}',
             detail: 'Recent bundle exchange and report generation activity.',
             color: const Color(0xFF6D4B73)),
       ],
