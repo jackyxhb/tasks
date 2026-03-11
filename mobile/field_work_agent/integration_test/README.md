@@ -6,6 +6,7 @@ Keep this surface executable.
 
 Current runtime-validation entrypoints:
 - `integration_test/app_launch_flow_test.dart` boots the full shell and verifies cross-section navigation still works after refactors.
+- `integration_test/export_bundle_flow_test.dart` generates a bundle through the live export screen and verifies export history reflects the mutation.
 - `integration_test/task_creation_flow_test.dart` creates a task through the live shell flow and verifies the UI reflects the mutation.
 
 macOS note:

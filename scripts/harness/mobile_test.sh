@@ -9,6 +9,7 @@ cd "$root_dir"
 
 cd "$package_dir"
 flutter test -d macos integration_test/app_launch_flow_test.dart
+flutter test -d macos integration_test/export_bundle_flow_test.dart
 flutter test -d macos integration_test/task_creation_flow_test.dart
 
 flutter test \
