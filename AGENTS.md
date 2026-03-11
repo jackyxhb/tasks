@@ -73,6 +73,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - `make check` - Run lint-like and type-like harness verification commands.
 - `make task-contract CONTRACT=<path>` - Validate the current task contract before an autonomous run.
 - `make mobile-preflight` - Run the stable mobile toolchain preflight for Flutter-dependent work.
+- `make mobile-run` - Launch the Flutter app locally from the repo root. Override the target with `DEVICE=<flutter-device-id>` when needed.
 - `make mobile-typecheck` - Run the repo-local Flutter analyze wrapper for the mobile package.
 - `make mobile-test` - Run the focused repo-local Flutter test batch for the mobile package.
 - `make audit` - Run the harness audit entrypoint.
@@ -103,6 +104,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - `make smoke` must stay cheap and deterministic.
 - `make check` must run fast-fail harness verification before any longer workflow exists.
 - `make mobile-preflight` should remain the stable explicit preflight for Flutter-dependent work and repo-local mobile wrappers should call it before Flutter commands.
+- `make mobile-run` should remain the canonical local app-launch entrypoint from the repo root and default to `DEVICE=macos` unless explicitly overridden.
 - `make ci` must remain the canonical single-command validation entrypoint.
 - Repo-local wrapper scripts under `scripts/harness/` are preferred over ad-hoc manual command sequences.
 

@@ -1,4 +1,4 @@
-.PHONY: smoke test lint typecheck check task-contract mobile-preflight mobile-typecheck mobile-test audit ci
+.PHONY: smoke test lint typecheck check task-contract mobile-preflight mobile-run mobile-typecheck mobile-test audit ci
 
 smoke:
 	@./scripts/harness/smoke.sh
@@ -25,6 +25,9 @@ task-contract:
 
 mobile-preflight:
 	@./bin/check-mobile-toolchain
+
+mobile-run:
+	@./scripts/harness/mobile_run.sh
 
 audit:
 	@python3 ./scripts/harness_wizard.py audit .
