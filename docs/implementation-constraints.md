@@ -71,6 +71,27 @@ Validation helper:
 
 - `python3 scripts/validate_bundle.py <bundle.json>`
 
+## Constraint 4: Explicit Mobile App Boundaries
+
+The Flutter package structure must preserve explicit app-shell boundaries that the harness can check directly.
+
+Implementation consequences:
+
+- app-shell, navigation, and top-level runtime wiring live under `mobile/field_work_agent/lib/app/`
+- `mobile/field_work_agent/lib/src/` must not be used as a generic dumping ground
+- feature-specific UI should trend toward feature-owned folders rather than central growth in one catch-all shell file
+- `mobile/field_work_agent/integration_test/` must exist as the stable home for launch and interaction validation
+
+Required implementation concepts:
+
+- `lib/app/` directory for shell and composition code
+- `integration_test/` directory for runtime-validation expansion
+
+Forbidden implementation directions:
+
+- reintroducing shell code under `lib/src/`
+- growing new top-level app composition files outside `lib/app/`
+
 ## Future Enforcement Strategy
 
 Repo-local checks should enforce these constraints when implementation code exists:
@@ -78,6 +99,7 @@ Repo-local checks should enforce these constraints when implementation code exis
 - `bin/check-local-only-code`
 - `bin/check-meeting-review-gate`
 - `bin/check-bundle-schema`
+- `bin/check-mobile-project-structure`
 - `bin/check-implementation-constraints`
 
 ## Rule

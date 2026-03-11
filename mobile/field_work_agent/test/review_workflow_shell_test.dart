@@ -23,9 +23,9 @@ import 'package:field_work_agent/features/projects/application/project_draft.dar
 import 'package:field_work_agent/features/reports/application/report_models.dart';
 import 'package:field_work_agent/features/search/application/search_models.dart';
 import 'package:field_work_agent/features/tasks/application/task_models.dart';
-import 'package:field_work_agent/src/app_runtime.dart';
-import 'package:field_work_agent/src/app_sections.dart';
-import 'package:field_work_agent/src/section_screens.dart';
+import 'package:field_work_agent/app/app_runtime.dart';
+import 'package:field_work_agent/app/app_sections.dart';
+import 'package:field_work_agent/app/section_screens.dart';
 
 void main() {
   testWidgets('inbox review dialog submits task review draft', (

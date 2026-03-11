@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:field_work_agent/src/app_sections.dart';
-import 'package:field_work_agent/src/app_shell.dart';
-import 'package:field_work_agent/src/app_runtime.dart';
-import 'package:field_work_agent/src/section_screens.dart';
+import 'package:field_work_agent/app/app_sections.dart';
+import 'package:field_work_agent/app/app_shell.dart';
+import 'package:field_work_agent/app/app_runtime.dart';
+import 'package:field_work_agent/app/section_screens.dart';
 
 void main() {
   testWidgets('renders app shell home dashboard', (WidgetTester tester) async {

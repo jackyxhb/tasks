@@ -1,0 +1,55 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+PACKAGE_DIR="$ROOT_DIR/mobile/field_work_agent"
+APP_DIR="$PACKAGE_DIR/lib/app"
+LEGACY_SRC_DIR="$PACKAGE_DIR/lib/src"
+INTEGRATION_TEST_DIR="$PACKAGE_DIR/integration_test"
+SECTION_SCREENS_FILE="$APP_DIR/section_screens.dart"
+
+if [ ! -d "$PACKAGE_DIR" ]; then
+  echo "ERROR: missing Flutter package at $PACKAGE_DIR"
+  exit 1
+fi
+
+if [ ! -d "$APP_DIR" ]; then
+  echo "ERROR: missing explicit app-shell directory: $APP_DIR"
+  exit 1
+fi
+
+for required_file in app_shell.dart app_runtime.dart app_sections.dart section_screens.dart; do
+  if [ ! -f "$APP_DIR/$required_file" ]; then
+    echo "ERROR: missing app-shell file: $APP_DIR/$required_file"
+    exit 1
+  fi
+done
+
+for feature_presentation in \
+  "$PACKAGE_DIR/lib/features/capture/presentation/inbox_screen.dart" \
+  "$PACKAGE_DIR/lib/features/projects/presentation/projects_screen.dart" \
+  "$PACKAGE_DIR/lib/features/search/presentation/search_screen.dart" \
+  "$PACKAGE_DIR/lib/features/reports/presentation/reports_screen.dart" \
+  "$PACKAGE_DIR/lib/features/exchange/presentation/exchange_screens.dart"; do
+  if [ ! -f "$feature_presentation" ]; then
+    echo "ERROR: missing feature presentation file: $feature_presentation"
+    exit 1
+  fi
+done
+
+if [ -d "$LEGACY_SRC_DIR" ] && find "$LEGACY_SRC_DIR" -name '*.dart' -print | grep -q .; then
+  echo "ERROR: legacy lib/src Dart files detected; move top-level app shell code into lib/app"
+  exit 1
+fi
+
+if [ ! -d "$INTEGRATION_TEST_DIR" ]; then
+  echo "ERROR: missing runtime-validation directory: $INTEGRATION_TEST_DIR"
+  exit 1
+fi
+
+if grep -Eq '^class (InboxScreen|ProjectsScreen|SearchScreen|ReportsScreen|ImportScreen|ExportScreen)\b' "$SECTION_SCREENS_FILE"; then
+  echo "ERROR: feature screens drifted back into $SECTION_SCREENS_FILE; keep app shell composition separate from feature-owned presentation"
+  exit 1
+fi
+
+echo "OK: mobile project structure boundaries passed"

@@ -16,5 +16,6 @@ run_check() {
 run_check check-local-only-code "local-only storage boundaries"
 run_check check-meeting-review-gate "meeting review before task promotion"
 run_check check-bundle-schema "canonical import/export bundle integrity"
+run_check check-mobile-project-structure "explicit mobile app boundaries and runtime validation surface"
 
 echo "OK: implementation-aware constraints passed"

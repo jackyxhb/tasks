@@ -44,6 +44,11 @@ This repo is the harness for the personal field work agent app. If an agent prod
   context: On 2026-03-09 the repo-level harness passed while the Flutter package still contained compile-time and integration regressions that only surfaced when the new acceptance suite ran.
   consequence: make ci could report green even when the shipped mobile app was broken.
   fix: Keep repo-local mobile analyze and focused mobile test wrappers under scripts/harness/ and run them from the canonical validation path.
+
+- rule: Mobile app-shell boundaries must stay explicit and enforceable.
+  context: On 2026-03-10 the Flutter package accumulated shell and section code under a generic lib/src/ bucket, while launch-surface usability failures still passed the harness.
+  consequence: Structural ownership became ambiguous, runtime-validation expansion had no clear home, and agents could keep adding UI into a catch-all shell file without tripping a guard.
+  fix: Keep shell and top-level composition under mobile/field_work_agent/lib/app/, reserve feature code for feature folders, and maintain mobile/field_work_agent/integration_test/ as the runtime-validation surface.
 ```
 
 ## Available Tools
@@ -54,6 +59,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - `bin/check-local-only-code` - Detect code patterns that would introduce non-local storage or sync assumptions in v1.
 - `bin/check-meeting-review-gate` - Detect missing meeting review-gate signals or suspicious direct final-task promotion patterns.
 - `bin/check-bundle-schema` - Validate the canonical import/export schema and sample bundle.
+- `bin/check-mobile-project-structure` - Validate explicit Flutter app-shell boundaries and the runtime-validation surface.
 - `bin/check-implementation-constraints` - Run all implementation-aware constraint checks together.
 - `bin/check-mobile-toolchain` - Fail fast when Flutter-dependent work is requested but the Flutter/Dart toolchain is not available.
 - `bin/check-task-contract [path]` - Validate a machine-readable task contract for autonomous runs.
@@ -107,6 +113,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - Run `bin/check-constraints` after changing design assumptions or planning docs.
 - Run `bin/check-gc` when cleaning planning artifacts or after adding new focused docs.
 - Run `bin/check-implementation-constraints` after changing future implementation code or import/export contracts.
+- Run `bin/check-mobile-project-structure` after changing Flutter app layout, top-level shell wiring, or runtime-validation folders.
 - Run `bin/check-mobile-toolchain` before Flutter UI work, platform-runner generation, or mobile contracts that require runtime validation.
 - Run `bin/check-task-contract <path>` before substantial autonomous work when a task-specific contract exists.
 - Run `bin/check-harness` after changing harness files.
