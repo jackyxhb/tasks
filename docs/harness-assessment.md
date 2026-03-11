@@ -30,7 +30,7 @@ Score:
 
 ## Pillar 2: Architectural Constraints
 
-Status: minimal initial enforcement only.
+Status: enforced in code and validation.
 
 Passing:
 
@@ -41,11 +41,11 @@ Passing:
 
 Gaps:
 
-- implementation-boundary checks are still missing for the current app code
+- runtime validation is still narrow; the harness now proves launch/navigation and one task-mutation flow, but broader end-to-end mutation coverage is still pending
 
 Score:
 
-- 4/5
+- 5/5
 
 ## Pillar 3: Garbage Collection
 
@@ -79,9 +79,9 @@ The harness is currently focused on preventing these already-observed failures:
 
 ## Immediate Recommendations
 
-1. Add implementation-aware structural checks once app code exists, especially for local-only storage, import/export format, and meeting-to-task review boundaries.
-2. Expand implementation-aware checks later beyond compile-and-test coverage into more structural assertions over the mobile codebase.
-	Current state: repo-local Flutter analyze and focused Flutter test wrappers now run from the canonical validation path, and they call `bin/check-mobile-toolchain` before Flutter commands.
+1. Expand runtime validation beyond the current launch/navigation and task-creation flows into meeting review and import/export mutation paths.
+2. Keep implementation-aware checks growing alongside app structure, especially when new shell-adjacent surfaces or bundle workflows are added.
+	Current state: repo-local Flutter analyze, structure enforcement, and executable integration tests now run from the canonical validation path, and Flutter commands preflight through `bin/check-mobile-toolchain`.
 3. Expand GC checks later to include stale exports, unused example artifacts, and obsolete planning branches.
 4. Replace the legacy root tombstones with full deletion once no external references remain.
 

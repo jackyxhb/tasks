@@ -27,7 +27,9 @@ done
 
 for feature_presentation in \
   "$PACKAGE_DIR/lib/features/capture/presentation/inbox_screen.dart" \
+  "$PACKAGE_DIR/lib/features/tasks/presentation/tasks_screen.dart" \
   "$PACKAGE_DIR/lib/features/projects/presentation/projects_screen.dart" \
+  "$PACKAGE_DIR/lib/features/meetings/presentation/meetings_screen.dart" \
   "$PACKAGE_DIR/lib/features/search/presentation/search_screen.dart" \
   "$PACKAGE_DIR/lib/features/reports/presentation/reports_screen.dart" \
   "$PACKAGE_DIR/lib/features/exchange/presentation/exchange_screens.dart"; do
@@ -47,7 +49,12 @@ if [ ! -d "$INTEGRATION_TEST_DIR" ]; then
   exit 1
 fi
 
-if grep -Eq '^class (InboxScreen|ProjectsScreen|SearchScreen|ReportsScreen|ImportScreen|ExportScreen)\b' "$SECTION_SCREENS_FILE"; then
+if ! find "$INTEGRATION_TEST_DIR" -maxdepth 1 -name '*.dart' -print | grep -q .; then
+  echo "ERROR: missing executable runtime-validation test under $INTEGRATION_TEST_DIR"
+  exit 1
+fi
+
+if grep -Eq '^class (InboxScreen|ProjectsScreen|TasksScreen|MeetingsScreen|SearchScreen|ReportsScreen|ImportScreen|ExportScreen)\b' "$SECTION_SCREENS_FILE"; then
   echo "ERROR: feature screens drifted back into $SECTION_SCREENS_FILE; keep app shell composition separate from feature-owned presentation"
   exit 1
 fi

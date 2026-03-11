@@ -49,6 +49,11 @@ This repo is the harness for the personal field work agent app. If an agent prod
   context: On 2026-03-10 the Flutter package accumulated shell and section code under a generic lib/src/ bucket, while launch-surface usability failures still passed the harness.
   consequence: Structural ownership became ambiguous, runtime-validation expansion had no clear home, and agents could keep adding UI into a catch-all shell file without tripping a guard.
   fix: Keep shell and top-level composition under mobile/field_work_agent/lib/app/, reserve feature code for feature folders, and maintain mobile/field_work_agent/integration_test/ as the runtime-validation surface.
+
+- rule: macOS runtime-validation must run integration tests as explicit per-file invocations.
+  context: On 2026-03-11 a directory-wide `flutter test -d macos integration_test` run produced app startup and debug-connection failures even though the individual integration tests passed in isolation.
+  consequence: The harness can report false negatives and destabilize the canonical mobile validation path.
+  fix: Keep macOS integration coverage executable through `mobile/field_work_agent/integration_test/`, but run those tests one file at a time from `scripts/harness/mobile_test.sh`.
 ```
 
 ## Available Tools

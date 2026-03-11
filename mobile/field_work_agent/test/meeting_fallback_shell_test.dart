@@ -15,7 +15,7 @@ import 'package:field_work_agent/domain/enums/raw_capture_parse_status.dart';
 import 'package:field_work_agent/domain/enums/task_candidate_state.dart';
 import 'package:field_work_agent/domain/enums/task_type.dart';
 import 'package:field_work_agent/app/app_runtime.dart';
-import 'package:field_work_agent/app/section_screens.dart';
+import 'package:field_work_agent/features/meetings/presentation/meetings_screen.dart';
 
 void main() {
   testWidgets('meeting screen shows pending, failed, and manual fallback states', (WidgetTester tester) async {

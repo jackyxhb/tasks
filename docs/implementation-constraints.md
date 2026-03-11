@@ -80,12 +80,12 @@ Implementation consequences:
 - app-shell, navigation, and top-level runtime wiring live under `mobile/field_work_agent/lib/app/`
 - `mobile/field_work_agent/lib/src/` must not be used as a generic dumping ground
 - feature-specific UI should trend toward feature-owned folders rather than central growth in one catch-all shell file
-- `mobile/field_work_agent/integration_test/` must exist as the stable home for launch and interaction validation
+- `mobile/field_work_agent/integration_test/` must exist as the stable home for executable launch and interaction validation
 
 Required implementation concepts:
 
 - `lib/app/` directory for shell and composition code
-- `integration_test/` directory for runtime-validation expansion
+- `integration_test/` directory with executable runtime-validation coverage
 
 Forbidden implementation directions:
 
