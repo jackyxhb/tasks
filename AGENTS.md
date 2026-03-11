@@ -54,6 +54,16 @@ This repo is the harness for the personal field work agent app. If an agent prod
   context: On 2026-03-11 a directory-wide `flutter test -d macos integration_test` run produced app startup and debug-connection failures even though the individual integration tests passed in isolation.
   consequence: The harness can report false negatives and destabilize the canonical mobile validation path.
   fix: Keep macOS integration coverage executable through `mobile/field_work_agent/integration_test/`, but run those tests one file at a time from `scripts/harness/mobile_test.sh`.
+
+- rule: Home quick actions declared in docs must map to real user-completable flows, not navigation stubs.
+  context: On 2026-03-11 the UX listed `Paste Text` as a capture action, but the app only navigated to Inbox and exposed no text-entry capture flow.
+  consequence: The harness can report green while a documented core workflow is unavailable to users.
+  fix: Keep a runtime-validation test for each documented Home quick action that mutates state, and fail planning/harness reviews when an action is only a section redirect.
+
+- rule: Mobile runtime-validation must include iOS launch-surface checks, not macOS-only coverage.
+  context: On 2026-03-11 the app launched under macOS validation but showed a blank white screen on iPhone.
+  consequence: Platform-specific startup failures can ship while canonical validation still passes.
+  fix: Keep macOS as the default stable suite, and add an explicit iOS smoke validation path (manual gate or device-targeted automation) in the harness contract.
 ```
 
 ## Available Tools
@@ -65,6 +75,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - `bin/check-meeting-review-gate` - Detect missing meeting review-gate signals or suspicious direct final-task promotion patterns.
 - `bin/check-bundle-schema` - Validate the canonical import/export schema and sample bundle.
 - `bin/check-mobile-project-structure` - Validate explicit Flutter app-shell boundaries and the runtime-validation surface.
+- `bin/check-home-quick-actions` - Detect documented Home quick actions that are implemented as navigation stubs instead of user-completable flows.
 - `bin/check-implementation-constraints` - Run all implementation-aware constraint checks together.
 - `bin/check-mobile-toolchain` - Fail fast when Flutter-dependent work is requested but the Flutter/Dart toolchain is not available.
 - `bin/check-task-contract [path]` - Validate a machine-readable task contract for autonomous runs.
@@ -74,6 +85,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - `make task-contract CONTRACT=<path>` - Validate the current task contract before an autonomous run.
 - `make mobile-preflight` - Run the stable mobile toolchain preflight for Flutter-dependent work.
 - `make mobile-run` - Launch the Flutter app locally from the repo root. Override the target with `DEVICE=<flutter-device-id>` when needed.
+- `make mobile-ios-smoke` - Run the iOS app-launch smoke validation test using a connected iOS device or simulator (`DEVICE=<flutter-device-id>` required).
 - `make mobile-typecheck` - Run the repo-local Flutter analyze wrapper for the mobile package.
 - `make mobile-test` - Run the focused repo-local Flutter test batch for the mobile package.
 - `make audit` - Run the harness audit entrypoint.
@@ -105,6 +117,7 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - `make check` must run fast-fail harness verification before any longer workflow exists.
 - `make mobile-preflight` should remain the stable explicit preflight for Flutter-dependent work and repo-local mobile wrappers should call it before Flutter commands.
 - `make mobile-run` should remain the canonical local app-launch entrypoint from the repo root and default to `DEVICE=macos` unless explicitly overridden.
+- iOS runtime smoke validation should be runnable as an explicit harness step when a device is available, and platform gaps should be recorded when iOS validation is skipped.
 - `make ci` must remain the canonical single-command validation entrypoint.
 - Repo-local wrapper scripts under `scripts/harness/` are preferred over ad-hoc manual command sequences.
 
@@ -121,9 +134,11 @@ This repo is the harness for the personal field work agent app. If an agent prod
 - Run `bin/check-gc` when cleaning planning artifacts or after adding new focused docs.
 - Run `bin/check-implementation-constraints` after changing future implementation code or import/export contracts.
 - Run `bin/check-mobile-project-structure` after changing Flutter app layout, top-level shell wiring, or runtime-validation folders.
+- Run `bin/check-home-quick-actions` after changing Home quick actions or capture/create entrypoints.
 - Run `bin/check-mobile-toolchain` before Flutter UI work, platform-runner generation, or mobile contracts that require runtime validation.
 - Run `bin/check-task-contract <path>` before substantial autonomous work when a task-specific contract exists.
 - Run `bin/check-harness` after changing harness files.
 - Run `make mobile-typecheck` and `make mobile-test` when changing the repo harness or mobile validation path.
+- Run `make mobile-ios-smoke` when launch-surface behavior changes and an iOS device/simulator is available.
 - Run `python3 scripts/harness_wizard.py audit .` after changing core harness artifacts.
 - If a rule here matters and is not checkable yet, add a follow-up check or document the gap in docs/harness-assessment.md.

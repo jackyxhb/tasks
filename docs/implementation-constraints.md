@@ -92,6 +92,46 @@ Forbidden implementation directions:
 - reintroducing shell code under `lib/src/`
 - growing new top-level app composition files outside `lib/app/`
 
+## Constraint 5: Home Quick Actions Must Be Real Flows
+
+Home quick actions declared in the UX plan must map to user-completable flows, not section redirects.
+
+Implementation consequences:
+
+- quick actions that represent capture or create workflows must invoke a real input-and-save flow
+- navigation-only stubs are allowed only for non-mutating browse actions
+- runtime-validation coverage must include each documented mutating quick action
+
+Required implementation concepts:
+
+- a concrete text-entry capture flow behind `Paste Text`
+- test coverage that verifies user-triggered state mutation for each mutating quick action
+
+Forbidden implementation directions:
+
+- implementing `Paste Text` as redirect-only behavior to Inbox
+- keeping mutating quick actions as shell navigation placeholders
+
+## Constraint 6: iOS Launch-Surface Validation
+
+Runtime validation must include iOS launch coverage in addition to macOS integration checks.
+
+Implementation consequences:
+
+- keep macOS per-file integration tests as the default stable suite
+- provide an explicit iOS smoke command for launch-surface validation when a device is available
+- record a platform gap when iOS smoke validation is skipped
+
+Required implementation concepts:
+
+- `make mobile-ios-smoke` harness entrypoint
+- device-targeted iOS smoke execution path
+
+Forbidden implementation directions:
+
+- treating macOS-only runtime validation as sufficient for mobile release confidence
+- shipping launch-surface changes without at least smoke-level iOS verification
+
 ## Future Enforcement Strategy
 
 Repo-local checks should enforce these constraints when implementation code exists:
@@ -100,6 +140,7 @@ Repo-local checks should enforce these constraints when implementation code exis
 - `bin/check-meeting-review-gate`
 - `bin/check-bundle-schema`
 - `bin/check-mobile-project-structure`
+- `bin/check-home-quick-actions`
 - `bin/check-implementation-constraints`
 
 ## Rule

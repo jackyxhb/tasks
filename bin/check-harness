@@ -18,6 +18,16 @@ if ! grep -q "Version 1 is local-only" "$ROOT_DIR/AGENTS.md"; then
   exit 1
 fi
 
+if ! grep -q "Home quick actions declared in docs must map to real user-completable flows" "$ROOT_DIR/AGENTS.md"; then
+  echo "ERROR: AGENTS.md is missing the quick-action implementation rule"
+  exit 1
+fi
+
+if ! grep -q "Mobile runtime-validation must include iOS launch-surface checks" "$ROOT_DIR/AGENTS.md"; then
+  echo "ERROR: AGENTS.md is missing the iOS runtime-validation rule"
+  exit 1
+fi
+
 "$ROOT_DIR/bin/check-docs"
 "$ROOT_DIR/bin/check-constraints"
 "$ROOT_DIR/bin/check-gc"

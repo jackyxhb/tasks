@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+HOME_SCREEN_FILE="$ROOT_DIR/mobile/field_work_agent/lib/app/section_screens.dart"
+
+if [ ! -f "$HOME_SCREEN_FILE" ]; then
+  echo "ERROR: missing home dashboard source: $HOME_SCREEN_FILE"
+  exit 1
+fi
+
+# Guardrail for known drift: 'Paste Text' cannot be a pure redirect to Inbox.
+if awk '
+  /label: '\''Paste Text'\''/ {in_block=1}
+  in_block && /onNavigate!\(AppSection\.inbox\)/ {bad=1}
+  in_block && /\),/ {if (bad) exit 7; in_block=0; bad=0}
+  END {if (bad) exit 7}
+' "$HOME_SCREEN_FILE"; then
+  :
+else
+  status=$?
+  if [ "$status" -eq 7 ]; then
+    echo "ERROR: Home quick action 'Paste Text' is a navigation stub to Inbox, not a real text capture flow"
+    echo "  -> remediation: wire 'Paste Text' to a text-entry capture flow and keep runtime-validation coverage for that mutation path"
+    echo "  -> see: docs/ux-screen-plan.md and docs/implementation-constraints.md"
+    exit 1
+  fi
+  echo "ERROR: failed to evaluate quick-action guards"
+  exit "$status"
+fi
+
+echo "OK: home quick-action guards passed"
