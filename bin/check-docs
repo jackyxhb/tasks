@@ -63,4 +63,13 @@ do
   fi
 done
 
+for doc in docs/*.md; do
+  code_newer=$(find "$ROOT_DIR" \( -name "*.dart" -o -name "*.sh" -o -name "*.py" \) -path "*/mobile/*" -newer "$doc" 2>/dev/null | head -1)
+  if [ -n "$code_newer" ]; then
+    doc_date=$(stat -f "%Sm" -t "%Y-%m-%d" "$doc" 2>/dev/null || stat -c "%y" "$doc" 2>/dev/null | cut -d' ' -f1)
+    code_date=$(stat -f "%Sm" -t "%Y-%m-%d" "$code_newer" 2>/dev/null || stat -c "%y" "$code_newer" 2>/dev/null | cut -d' ' -f1)
+    echo "[warn]   doc may be stale: $(basename "$doc") (modified $doc_date, newer code: $code_date)"
+  fi
+done
+
 echo "OK: required docs exist and are linked from docs/app-design-spec.md"

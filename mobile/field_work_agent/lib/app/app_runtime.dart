@@ -244,46 +244,62 @@ class StaticAppShellController implements AppShellController {
   Future<AppShellData> load() async => data;
 
   @override
-  Future<AppShellData> createProject({required ProjectDraft draft, String? actorName}) async => data;
+  Future<AppShellData> createProject(
+          {required ProjectDraft draft, String? actorName}) async =>
+      data;
 
   @override
   Future<AppShellData> updateProject({
     required String projectId,
     required ProjectDraft draft,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
-  Future<AppShellData> archiveProject({required String projectId, String? actorName}) async => data;
+  Future<AppShellData> archiveProject(
+          {required String projectId, String? actorName}) async =>
+      data;
 
   @override
-  Future<AppShellData> createTask({required TaskDraft draft, String? actorName}) async => data;
+  Future<AppShellData> createTask(
+          {required TaskDraft draft, String? actorName}) async =>
+      data;
 
   @override
   Future<AppShellData> updateTask({
     required String taskId,
     required TaskDraft draft,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
-  Future<AppShellData> archiveTask({required String taskId, String? actorName}) async => data;
+  Future<AppShellData> archiveTask(
+          {required String taskId, String? actorName}) async =>
+      data;
 
   @override
-  Future<AppShellData> markCaptureReviewed({required String captureId, String? actorName}) async => data;
+  Future<AppShellData> markCaptureReviewed(
+          {required String captureId, String? actorName}) async =>
+      data;
 
   @override
   Future<AppShellData> createRawTextCapture({
     required String textContent,
     String? actorName,
-  }) async => data;
-
-  @override
-  Future<AppShellData> createTaskFromCapture({required CaptureTaskReviewDraft draft, String? actorName}) async =>
+  }) async =>
       data;
 
   @override
-  Future<AppShellData> beginMeetingReview({required String meetingId, String? actorName}) async => data;
+  Future<AppShellData> createTaskFromCapture(
+          {required CaptureTaskReviewDraft draft, String? actorName}) async =>
+      data;
+
+  @override
+  Future<AppShellData> beginMeetingReview(
+          {required String meetingId, String? actorName}) async =>
+      data;
 
   @override
   Future<AppShellData> moveMeetingToManualReview({
@@ -291,21 +307,26 @@ class StaticAppShellController implements AppShellController {
     required String reason,
     MeetingReviewDraft? draft,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
   Future<AppShellData> updateMeetingDraft({
     required String meetingId,
     required MeetingReviewDraft draft,
     String? actorName,
-  }) async => data;
-
-  @override
-  Future<AppShellData> beginMeetingTaskCandidateResolution({required String meetingId, String? actorName}) async =>
+  }) async =>
       data;
 
   @override
-  Future<AppShellData> finalizeMeeting({required String meetingId, String? actorName}) async => data;
+  Future<AppShellData> beginMeetingTaskCandidateResolution(
+          {required String meetingId, String? actorName}) async =>
+      data;
+
+  @override
+  Future<AppShellData> finalizeMeeting(
+          {required String meetingId, String? actorName}) async =>
+      data;
 
   @override
   Future<AppShellData> acceptMeetingCandidateAsNewTask({
@@ -313,7 +334,8 @@ class StaticAppShellController implements AppShellController {
     required String candidateId,
     required String agenteeName,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
   Future<AppShellData> saveMeetingCandidateAsProvisional({
@@ -321,7 +343,8 @@ class StaticAppShellController implements AppShellController {
     required String candidateId,
     required String agenteeName,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
   Future<AppShellData> mergeMeetingCandidateIntoTask({
@@ -329,7 +352,8 @@ class StaticAppShellController implements AppShellController {
     required String candidateId,
     required String taskId,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
   Future<AppShellData> updateMeetingCandidate({
@@ -337,17 +361,20 @@ class StaticAppShellController implements AppShellController {
     required String candidateId,
     required MeetingTaskCandidateDraft draft,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
   Future<AppShellData> rejectMeetingCandidate({
     required String meetingId,
     required String candidateId,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
-  Future<GroupedSearchResults> searchRecords({required SearchRequest request}) async {
+  Future<GroupedSearchResults> searchRecords(
+      {required SearchRequest request}) async {
     return const GroupedSearchResults(
       projects: <SearchHit>[],
       tasks: <SearchHit>[],
@@ -447,7 +474,8 @@ class StaticAppShellController implements AppShellController {
   Future<AppShellData> applyImportBundle({
     required String relativeImportPath,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 }
 
 class LocalAppShellController implements AppShellController {
@@ -583,7 +611,8 @@ class LocalAppShellController implements AppShellController {
     String? actorName,
   }) {
     return _withRuntime((runtime) async {
-      final classifiedCapture = await runtime.captureClassificationService.applyClassification(
+      final classifiedCapture =
+          await runtime.captureClassificationService.applyClassification(
         captureId: draft.captureId,
         classification: CaptureClassification(
           type: draft.classificationType,
@@ -628,7 +657,8 @@ class LocalAppShellController implements AppShellController {
   }
 
   @override
-  Future<AppShellData> beginMeetingReview({required String meetingId, String? actorName}) {
+  Future<AppShellData> beginMeetingReview(
+      {required String meetingId, String? actorName}) {
     return _withRuntime((runtime) async {
       await runtime.meetingReviewService.beginReview(
         meetingId: meetingId,
@@ -687,7 +717,8 @@ class LocalAppShellController implements AppShellController {
   }
 
   @override
-  Future<AppShellData> finalizeMeeting({required String meetingId, String? actorName}) {
+  Future<AppShellData> finalizeMeeting(
+      {required String meetingId, String? actorName}) {
     return _withRuntime((runtime) async {
       await runtime.meetingReviewService.finalizeMeeting(
         meetingId: meetingId,
@@ -877,7 +908,8 @@ class LocalAppShellController implements AppShellController {
     });
   }
 
-  Future<T> _withRuntime<T>(Future<T> Function(_LocalAppRuntime runtime) action) async {
+  Future<T> _withRuntime<T>(
+      Future<T> Function(_LocalAppRuntime runtime) action) async {
     final supportDirectory = await getApplicationSupportDirectory();
     final migrationsDirectory = await _materializeMigrations(supportDirectory);
     final runtime = await _LocalAppRuntime.open(
@@ -893,7 +925,8 @@ class LocalAppShellController implements AppShellController {
   }
 
   Future<Directory> _materializeMigrations(Directory supportDirectory) async {
-    final migrationsDirectory = Directory(_join(supportDirectory.path, 'migrations'));
+    final migrationsDirectory =
+        Directory(_join(supportDirectory.path, 'migrations'));
     await migrationsDirectory.create(recursive: true);
 
     for (final assetPath in _migrationAssets) {
@@ -906,7 +939,8 @@ class LocalAppShellController implements AppShellController {
     return migrationsDirectory;
   }
 
-  static Future<List<ImportRunEntity>> _loadImportRuns(DatabaseExecutor executor) async {
+  static Future<List<ImportRunEntity>> _loadImportRuns(
+      DatabaseExecutor executor) async {
     final rows = await executor.query(
       'SELECT * FROM imports ORDER BY import_time DESC LIMIT 5',
     );
@@ -926,7 +960,8 @@ class LocalAppShellController implements AppShellController {
         .toList(growable: false);
   }
 
-  static Future<List<ExportRunEntity>> _loadExportRuns(DatabaseExecutor executor) async {
+  static Future<List<ExportRunEntity>> _loadExportRuns(
+      DatabaseExecutor executor) async {
     final rows = await executor.query(
       'SELECT * FROM exports ORDER BY created_at DESC LIMIT 5',
     );
@@ -946,8 +981,10 @@ class LocalAppShellController implements AppShellController {
   }
 
   String _join(String left, String right) {
-    final normalizedLeft = left.replaceAll('\\', '/').replaceFirst(RegExp(r'/$'), '');
-    final normalizedRight = right.replaceAll('\\', '/').replaceFirst(RegExp('^/'), '');
+    final normalizedLeft =
+        left.replaceAll('\\', '/').replaceFirst(RegExp(r'/$'), '');
+    final normalizedRight =
+        right.replaceAll('\\', '/').replaceFirst(RegExp('^/'), '');
     return '$normalizedLeft/$normalizedRight';
   }
 
@@ -1033,6 +1070,16 @@ class AppShellData {
   final List<ImportRunEntity> importRuns;
   final List<ExportRunEntity> exportRuns;
 
+  bool get hasAnyData =>
+      projects.isNotEmpty ||
+      tasks.isNotEmpty ||
+      meetings.isNotEmpty ||
+      rawCaptures.isNotEmpty;
+
+  bool get hasPendingWork =>
+      rawCaptures.isNotEmpty ||
+      tasks.any((task) => task.isProvisional && task.archivedAt == null);
+
   ProjectEntity? projectById(String? projectId) {
     if (projectId == null) {
       return null;
@@ -1075,7 +1122,8 @@ class _LocalAppRuntime {
   final MeetingReviewService meetingReviewService;
   final MeetingManualFallbackService meetingManualFallbackService;
   final MeetingReviewEditorService meetingReviewEditorService;
-  final MeetingTaskCandidateResolutionService meetingTaskCandidateResolutionService;
+  final MeetingTaskCandidateResolutionService
+      meetingTaskCandidateResolutionService;
 
   static Future<_LocalAppRuntime> open({
     required Directory supportDirectory,
@@ -1089,8 +1137,8 @@ class _LocalAppRuntime {
       opener: _SqfliteDatabaseOpener(databasePath: databasePath),
       migrationsDirectoryPath: migrationsDirectory.path,
     );
-    final storageService =
-      await LocalFileStorageBootstrap.initialize(rootDirectory: storageDirectory);
+    final storageService = await LocalFileStorageBootstrap.initialize(
+        rootDirectory: storageDirectory);
 
     final auditLogService = AuditLogService(repository: database.auditLogs);
     return _LocalAppRuntime(
@@ -1169,8 +1217,10 @@ class _LocalAppRuntime {
       meetings: await database.meetings.listAll(),
       rawCaptures: await database.rawCaptures.listAll(),
       reportRuns: await database.reportRuns.listAll(),
-      importRuns: await LocalAppShellController._loadImportRuns(database.executor),
-      exportRuns: await LocalAppShellController._loadExportRuns(database.executor),
+      importRuns:
+          await LocalAppShellController._loadImportRuns(database.executor),
+      exportRuns:
+          await LocalAppShellController._loadExportRuns(database.executor),
     );
   }
 
@@ -1179,8 +1229,10 @@ class _LocalAppRuntime {
   }
 
   static String _joinPaths(String left, String right) {
-    final normalizedLeft = left.replaceAll('\\', '/').replaceFirst(RegExp(r'/$'), '');
-    final normalizedRight = right.replaceAll('\\', '/').replaceFirst(RegExp('^/'), '');
+    final normalizedLeft =
+        left.replaceAll('\\', '/').replaceFirst(RegExp(r'/$'), '');
+    final normalizedRight =
+        right.replaceAll('\\', '/').replaceFirst(RegExp('^/'), '');
     return '$normalizedLeft/$normalizedRight';
   }
 }
@@ -1198,13 +1250,16 @@ class _SqfliteDatabaseOpener implements DatabaseOpener {
 }
 
 class _SqfliteDatabaseExecutor implements DatabaseExecutor {
-  const _SqfliteDatabaseExecutor._({this.database, required sqflite.DatabaseExecutor executor}) : _executor = executor;
+  const _SqfliteDatabaseExecutor._(
+      {this.database, required sqflite.DatabaseExecutor executor})
+      : _executor = executor;
 
   factory _SqfliteDatabaseExecutor.database(sqflite.Database database) {
     return _SqfliteDatabaseExecutor._(database: database, executor: database);
   }
 
-  factory _SqfliteDatabaseExecutor.transaction(sqflite.Transaction transaction) {
+  factory _SqfliteDatabaseExecutor.transaction(
+      sqflite.Transaction transaction) {
     return _SqfliteDatabaseExecutor._(executor: transaction);
   }
 
@@ -1212,24 +1267,28 @@ class _SqfliteDatabaseExecutor implements DatabaseExecutor {
   final sqflite.DatabaseExecutor _executor;
 
   @override
-  Future<void> execute(String sql, [List<Object?> parameters = const <Object?>[]]) {
+  Future<void> execute(String sql,
+      [List<Object?> parameters = const <Object?>[]]) {
     return _executor.execute(sql, parameters);
   }
 
   @override
-  Future<List<DatabaseRow>> query(String sql, [List<Object?> parameters = const <Object?>[]]) async {
+  Future<List<DatabaseRow>> query(String sql,
+      [List<Object?> parameters = const <Object?>[]]) async {
     final rows = await _executor.rawQuery(sql, parameters);
     return rows.cast<DatabaseRow>();
   }
 
   @override
-  Future<T> transaction<T>(Future<T> Function(DatabaseExecutor txn) action) async {
+  Future<T> transaction<T>(
+      Future<T> Function(DatabaseExecutor txn) action) async {
     final currentDatabase = database;
     if (currentDatabase == null) {
       return action(this);
     }
 
-    return currentDatabase.transaction<T>((sqflite.Transaction transaction) async {
+    return currentDatabase
+        .transaction<T>((sqflite.Transaction transaction) async {
       return action(_SqfliteDatabaseExecutor.transaction(transaction));
     });
   }

@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   harness:
     runs-on: ubuntu-latest
@@ -17,5 +20,23 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Flutter dependency audit
+        run: cd mobile/field_work_agent && flutter pub outdated --json 2>/dev/null | head -50 || echo "pub_outdated_unavailable"
+
       - name: Run harness pipeline
         run: make ci
+
+      - name: Publish CI status artifact
+        run: |
+          echo '{"run_id":"$GITHUB_RUN_ID","status":"success","timestamp":"'$GITHUB_RUN_ATTEMPT'"}' > scripts/.ci_status.json
+        if: success()
+
+      - name: Publish CI status artifact
+        run: |
+          echo '{"run_id":"$GITHUB_RUN_ID","status":"failure","timestamp":"'$GITHUB_RUN_ATTEMPT'"}' > scripts/.ci_status.json
+        if: failure()

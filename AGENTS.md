@@ -66,6 +66,16 @@ This repo is the harness for the personal field work agent app. If an agent prod
   fix: Keep macOS as the default stable suite, and add an explicit iOS smoke validation path (manual gate or device-targeted automation) in the harness contract.
 ```
 
+## Context Management
+
+- **Token budget:** When remaining context falls below ~30%, compact by summarizing completed work into `PLANS.md` or archiving completed sections. Large tool outputs (>50 lines) should be offloaded to temporary files rather than kept verbatim in context.
+- **Tool offloading:** For multi-step research tasks, write intermediate findings to `PLANS.md` or a temp file under `/tmp/` rather than holding all results in context. Use `bin/summarize-context.sh` as a placeholder for future summarization tooling.
+- **Stuck detection:** If the same check fails 3 times in a row with no code change, stop and report to user. Run `bin/notify.sh escalate "stuck on repeated failure"`.
+- **Escalation:** When blocked (missing info, ambiguous requirement, or repeated failure), call `bin/notify.sh escalate "<reason>"` and describe the blockage to the user rather than guessing.
+- **Exit hooks:** After each significant task step, call `bin/on-exit-hook.sh` to checkpoint state for potential resume.
+- **CI status:** Before starting mobile work, check `cat scripts/.ci_status.json` for the last CI run result.
+- **MCP:** See `.mcp.json` for configured MCP servers. Ollama MCP is available for local LLM operations.
+
 ## Available Tools
 
 - `bin/check-docs` - Validate required app design docs exist and are linked from docs/app-design-spec.md.

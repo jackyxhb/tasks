@@ -1,4 +1,9 @@
-.PHONY: smoke test lint typecheck check task-contract mobile-preflight mobile-run mobile-ios-smoke mobile-typecheck mobile-test audit ci
+HARNESS_VERSION := 0.2.0
+
+.PHONY: version smoke test lint typecheck check task-contract mobile-preflight mobile-run mobile-ios-smoke mobile-typecheck mobile-test audit ci
+
+version:
+	@echo "Harness version: $(HARNESS_VERSION)"
 
 smoke:
 	@./scripts/harness/smoke.sh

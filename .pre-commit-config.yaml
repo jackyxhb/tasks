@@ -1,0 +1,27 @@
+repos:
+  - repo: local
+    hooks:
+      - id: harness-checks
+        name: Harness Constraint Checks
+        entry: make check
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: task-contract-check
+        name: Task Contract Validation
+        entry: bin/check-task-contract
+        language: system
+        pass_filenames: false
+        always_run: false
+        stages: [pre-commit]
+        files: ^examples/task-contracts/
+
+      - id: docs-gc-check
+        name: Documentation GC Check
+        entry: bin/check-gc
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]

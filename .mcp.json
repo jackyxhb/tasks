@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "local-llm": {
+      "command": "uvx",
+      "args": [
+        "mcp-ollama",
+        "--url",
+        "http://localhost:11434/api"
+      ]
+    }
+  }
+}

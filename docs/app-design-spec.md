@@ -167,6 +167,7 @@ See the focused documents for full details:
 - [meeting-transcription-json-contract.md](./meeting-transcription-json-contract.md)
 - [meeting-review-state-machine.md](./meeting-review-state-machine.md)
 - [implementation-tickets.md](./implementation-tickets.md)
+- [prd-personal-field-work-agent-v1.md](./prd-personal-field-work-agent-v1.md)
 
 ## Validation Goals
 

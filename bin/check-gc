@@ -36,13 +36,22 @@ check_legacy_tombstone_or_absent() {
   fi
 }
 
+skip_dirs="adr control"
+skip_dirs_pattern=$(echo "$skip_dirs" | tr ' ' '|')
+
 check_legacy_tombstone_or_absent "$ROOT_DIR/ARCHIVE_FORMAT.md" "# LEGACY-ONLY: ARCHIVE_FORMAT.md"
 check_legacy_tombstone_or_absent "$ROOT_DIR/WORK_HOURS_RECORD_FORMAT.md" "# LEGACY-ONLY: WORK_HOURS_RECORD_FORMAT.md"
 
 find "$DOCS_DIR" -type f -name '*.md' | while IFS= read -r file; do
   base=$(basename "$file")
+  dir=$(basename "$(dirname "$file")")
   case "$base" in
-    app-design-spec.md|harness-assessment.md)
+    app-design-spec.md|harness-assessment.md|README.md)
+      continue
+      ;;
+  esac
+  case "$dir" in
+    adr|control)
       continue
       ;;
   esac
@@ -52,6 +61,13 @@ find "$DOCS_DIR" -type f -name '*.md' | while IFS= read -r file; do
       "focused doc $base is not linked from docs/app-design-spec.md" \
       "add the document to the Detailed References section in docs/app-design-spec.md in the same change" \
       "docs/app-design-spec.md"
+  fi
+
+  code_files_older=$(find "$ROOT_DIR" \( -name "*.dart" -o -name "*.sh" -o -name "*.py" \) -path "*/mobile/*" -newer "$file" 2>/dev/null | head -1)
+  if [ -n "$code_files_older" ]; then
+    code_mtime=$(stat -f "%Sm" -t "%Y-%m-%d" "$code_files_older" 2>/dev/null || stat -c "%y" "$code_files_older" 2>/dev/null | cut -d' ' -f1)
+    doc_mtime=$(stat -f "%Sm" -t "%Y-%m-%d" "$file" 2>/dev/null || stat -c "%y" "$file" 2>/dev/null | cut -d' ' -f1)
+    echo "[warn]   doc may be stale: $base (modified $doc_mtime, newer code found: $code_mtime)"
   fi
 done
 

@@ -43,6 +43,10 @@ Use this file for multi-step work where durable context matters.
 - [x] Docs updated
 - [x] Foundation slices T1-T12 implemented at application-layer scope
 - [ ] Meeting extraction/review slices T13-T16 implemented
+- [x] Harness audit completed (2026-03-23)
+- [x] Tier 1 improvements deployed
+- [ ] Tier 2 improvements deployed
+- [ ] Tier 3 improvements deployed
 
 ## Decision Log
 
@@ -55,6 +59,11 @@ Use this file for multi-step work where durable context matters.
   - Decision: Use import/export rather than sync for v1 exchange.
   - Reason: The app is personal and local-only in the first version.
   - Alternatives considered: shared backend, live sync, collaboration features
+
+- Date: 2026-03-23
+  - Decision: Implement harness audit recommendations (Tier 1-3).
+  - Reason: 38 gaps identified across Foundation, P1, P2, P3 areas.
+  - Alternatives considered: defer to future iteration
 
 ## Final Verification
 

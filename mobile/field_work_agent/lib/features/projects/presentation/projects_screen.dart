@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/app_runtime.dart';
 import '../../../app/app_sections.dart';
 import '../../../app/section_primitives.dart';
+import '../../../app/ui_components.dart';
 import '../../../domain/entities/project_entity.dart';
 import '../../../domain/enums/task_status.dart';
 import '../application/project_draft.dart';
@@ -190,6 +191,18 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   Future<void> _archiveProject(String projectId) async {
+    final confirmed = await ConfirmActionDialog.show(
+      context: context,
+      title: 'Archive this project?',
+      message:
+          'The project and its tasks will be moved to archive. You can reopen it later.',
+      confirmLabel: 'Archive',
+      cancelLabel: 'Cancel',
+      isDestructive: true,
+      confirmIcon: Icons.archive_rounded,
+    );
+    if (!confirmed) return;
+
     await _runControllerAction(
       () => widget.controller.archiveProject(projectId: projectId),
       successMessage: 'Project archived.',
@@ -332,8 +345,7 @@ class _ProjectEditorDialogState extends State<_ProjectEditorDialog> {
               const SizedBox(height: 12),
               TextField(
                 controller: _projectManagerController,
-                decoration:
-                    const InputDecoration(labelText: 'Project Manager'),
+                decoration: const InputDecoration(labelText: 'Project Manager'),
               ),
               const SizedBox(height: 12),
               TextField(

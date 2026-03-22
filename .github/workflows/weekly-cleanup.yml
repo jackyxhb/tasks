@@ -1,0 +1,31 @@
+name: Weekly Cleanup
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Documentation GC
+        run: bin/check-gc
+
+      - name: Stale branch report
+        run: |
+          echo "=== Merged branches (safe to delete) ==="
+          git branch -r --merged origin/main | grep -v 'main\|HEAD' || echo "none"
+          echo "=== Untracked planning docs ==="
+          find docs -name "*.md" -newer .github 2>/dev/null | head -20 || echo "none"

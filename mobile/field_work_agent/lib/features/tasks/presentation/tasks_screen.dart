@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/app_runtime.dart';
 import '../../../app/app_sections.dart';
 import '../../../app/section_primitives.dart';
+import '../../../app/ui_components.dart';
 import '../../../domain/entities/project_entity.dart';
 import '../../../domain/entities/task_entity.dart';
 import '../../../domain/enums/task_priority.dart';
@@ -121,7 +122,8 @@ class _TasksScreenState extends State<TasksScreen> {
     if (tasks.isEmpty) {
       return <Widget>[
         QueueItem(
-          title: provisional ? 'No provisional tasks' : 'No tasks in this bucket',
+          title:
+              provisional ? 'No provisional tasks' : 'No tasks in this bucket',
           caption: provisional
               ? 'Nothing is waiting on final confirmation right now.'
               : 'Local task data will appear here when scheduled.',
@@ -185,6 +187,17 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Future<void> _archiveTask(String taskId) async {
+    final confirmed = await ConfirmActionDialog.show(
+      context: context,
+      title: 'Archive this task?',
+      message: 'The task will be moved to archive. You can reopen it later.',
+      confirmLabel: 'Archive',
+      cancelLabel: 'Cancel',
+      isDestructive: true,
+      confirmIcon: Icons.archive_rounded,
+    );
+    if (!confirmed) return;
+
     await _runControllerAction(
       () => widget.controller.archiveTask(taskId: taskId),
       successMessage: 'Task archived.',
@@ -270,17 +283,23 @@ class _TaskEditorDialogState extends State<_TaskEditorDialog> {
     _isProvisional = task?.isProvisional ?? false;
     _needsReview = task?.needsReview ?? false;
     _titleController = TextEditingController(text: task?.taskTitle ?? '');
-    _descriptionController = TextEditingController(text: task?.description ?? '');
-    _dateController = TextEditingController(text: _dateInputLabel(task?.scheduledDate));
+    _descriptionController =
+        TextEditingController(text: task?.description ?? '');
+    _dateController =
+        TextEditingController(text: _dateInputLabel(task?.scheduledDate));
     _timeController = TextEditingController(text: task?.startTimeLocal ?? '');
     _durationController = TextEditingController(
       text: task?.durationMinutes == null ? '' : '${task!.durationMinutes}',
     );
-    _locationController = TextEditingController(text: task?.locationSnapshot ?? '');
+    _locationController =
+        TextEditingController(text: task?.locationSnapshot ?? '');
     _workerController = TextEditingController(text: task?.workerName ?? '');
-    _workerPhoneController = TextEditingController(text: task?.workerPhone ?? '');
-    _coordinatorController = TextEditingController(text: task?.coordinatorName ?? '');
-    _projectManagerController = TextEditingController(text: task?.projectManagerName ?? '');
+    _workerPhoneController =
+        TextEditingController(text: task?.workerPhone ?? '');
+    _coordinatorController =
+        TextEditingController(text: task?.coordinatorName ?? '');
+    _projectManagerController =
+        TextEditingController(text: task?.projectManagerName ?? '');
     _agenteeController = TextEditingController(
       text: task?.agenteeName ?? _defaultAgenteeName(widget.data),
     );
@@ -545,12 +564,11 @@ List<TaskEntity> _todayTasks(AppShellData data) {
       .where((task) => task.archivedAt == null)
       .where((task) => task.scheduledDate != null)
       .where((task) {
-        final local = task.scheduledDate!.toLocal();
-        return local.year == now.year &&
-            local.month == now.month &&
-            local.day == now.day;
-      })
-      .toList(growable: false);
+    final local = task.scheduledDate!.toLocal();
+    return local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
+  }).toList(growable: false);
 }
 
 List<TaskEntity> _upcomingTasks(AppShellData data) {

@@ -30,15 +30,19 @@ class FeatureSectionScaffold extends StatelessWidget {
             runSpacing: 12,
             children: actions
                 .map(
-                  (action) => ActionChip(
-                    avatar: Icon(action.icon, size: 18),
-                    label: Text(action.label),
-                    side: BorderSide.none,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 10,
+                  (action) => Semantics(
+                    label: action.semanticsLabel ?? action.label,
+                    button: true,
+                    child: ActionChip(
+                      avatar: Icon(action.icon, size: 18),
+                      label: Text(action.label),
+                      side: BorderSide.none,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
+                      onPressed: action.onPressed,
                     ),
-                    onPressed: action.onPressed,
                   ),
                 )
                 .toList(growable: false),
@@ -456,11 +460,13 @@ class ActionData {
     required this.label,
     required this.icon,
     this.onPressed,
+    this.semanticsLabel,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback? onPressed;
+  final String? semanticsLabel;
 }
 
 class MetricData {

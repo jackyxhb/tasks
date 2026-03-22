@@ -3,17 +3,18 @@ set -euo pipefail
 
 root_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 package_dir="$root_dir/mobile/field_work_agent"
+TIMEOUT_SECONDS="${TIMEOUT:-600}"
 
 cd "$root_dir"
 ./bin/check-mobile-toolchain
 
 cd "$package_dir"
-flutter test -d macos integration_test/app_launch_flow_test.dart
-flutter test -d macos integration_test/export_bundle_flow_test.dart
-flutter test -d macos integration_test/task_creation_flow_test.dart
-flutter test -d macos integration_test/text_capture_flow_test.dart
+timeout "$TIMEOUT_SECONDS" flutter test -d macos integration_test/app_launch_flow_test.dart
+timeout "$TIMEOUT_SECONDS" flutter test -d macos integration_test/export_bundle_flow_test.dart
+timeout "$TIMEOUT_SECONDS" flutter test -d macos integration_test/task_creation_flow_test.dart
+timeout "$TIMEOUT_SECONDS" flutter test -d macos integration_test/text_capture_flow_test.dart
 
-flutter test \
+timeout "$TIMEOUT_SECONDS" flutter test \
 	test/acceptance_workflows_test.dart \
 	test/meeting_fallback_shell_test.dart \
 	test/review_workflow_shell_test.dart \
