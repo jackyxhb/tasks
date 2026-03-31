@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+# check-dart-imports — Build Dart import graph and detect cross-package violations + cycles.
+# CLUE-P2-003 + CLUE-P3-005
+
+import sys
+import os
+import re
+import pathlib
+from collections import defaultdict
+
+DART_DIR = sys.argv[1] if len(sys.argv) > 1 else "mobile/field_work_agent/lib"
+
+def resolve_pkg(file_path: str) -> str:
+    rel = pathlib.Path(file_path).as_posix()
+    for prefix, pkg in [
+        ("mobile/field_work_agent/lib/app/", "app"),
+        ("mobile/field_work_agent/lib/core/", "core"),
+        ("mobile/field_work_agent/lib/data/", "data"),
+        ("mobile/field_work_agent/lib/features/", "features"),
+        ("mobile/field_work_agent/lib/models/", "models"),
+    ]:
+        if rel.startswith(prefix):
+            return pkg
+    return "unknown"
+
+imports_of = defaultdict(set)
+RE_IMPORT = re.compile(r"import 'package:field_work_agent/([^']+)'")
+
+for dart_file in pathlib.Path(DART_DIR).rglob("*.dart"):
+    owner_pkg = resolve_pkg(str(dart_file))
+    try:
+        content = dart_file.read_text()
+    except Exception:
+        continue
+    for m in RE_IMPORT.finditer(content):
+        imp_pkg = m.group(1).split("/")[0]
+        if imp_pkg in ("app", "core", "data", "features", "models"):
+            imports_of[owner_pkg].add(imp_pkg)
+
+print("Import graph:")
+for pkg in sorted(imports_of.keys()):
+    deps = sorted(imports_of[pkg])
+    print(f"  {pkg}: {', '.join(deps) if deps else '(no deps)'}")
+
+has_cycle = False
+
+def dfs(node, visited, path):
+    global has_cycle
+    for dep in imports_of.get(node, []):
+        if dep in visited:
+            print(f"CYCLE: {' -> '.join(path)} -> {dep}")
+            has_cycle = True
+            return
+        if dep not in visited:
+            visited.add(dep)
+            dfs(dep, visited, path + [dep])
+
+visited = set()
+for pkg in list(imports_of.keys()):
+    if pkg not in visited:
+        visited.add(pkg)
+        dfs(pkg, visited.copy(), [pkg])
+
+allowed = os.environ.get("FEATURES_ALLOWED_TO_IMPORT_APP", "")
+if allowed:
+    if "app" in imports_of.get("features", []):
+        print(f"VIOLATION: features may not import app (FEATURES_ALLOWED_TO_IMPORT_APP={allowed})")
+        sys.exit(1)
+
+if has_cycle:
+    print("FAIL: Circular dependencies detected")
+    sys.exit(1)
+print("OK: Import graph clean")

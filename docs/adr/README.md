@@ -7,12 +7,12 @@ This directory contains Architecture Decision Records (ADRs) for significant tec
 | ADR | Title | Status | File |
 |-----|-------|--------|------|
 | ADR-001 | Local-Only Storage | Accepted | [001-local-only-storage.md](001-local-only-storage.md) |
+| ADR-002 | Multi-Agent Orchestration | Rejected | [002-multi-agent-orchestration.md](002-multi-agent-orchestration.md) |
 
 ## Pending ADRs (Not Yet Created)
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| ADR-002 | Meeting/Task Separation | Proposed |
 | ADR-003 | AI Extraction Review Gate | Proposed |
 | ADR-004 | Import/Export Over Sync | Proposed |
 | ADR-005 | App Shell Boundaries | Proposed |

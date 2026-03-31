@@ -29,13 +29,13 @@
 
 ## Tier 3: Medium Priority (This quarter)
 
-| # | CLUE Ref | Feature | Action |
-|---|---|---|---|
-| 11 | CLUE-P3-002 | P3-1 Stale Contracts | Add staleness detection for task contracts |
-| 12 | CLUE-P2-003 | P2-2 Import Boundaries | Add Dart import graph analysis |
-| 13 | CLUE-P1-004 | P1-7 Plan Injection | Add session startup script that injects PLANS.md |
-| 14 | CLUE-P3-005 | P3-3 Dependency Graph | Add circular dep detection |
-| 15 | CLUE-F5-001 | F5 Orchestration | Design MAS protocol or remove empty .agent/ dirs |
+| # | CLUE Ref | Feature | Action | Status |
+|---|---|---|---|---|
+| 11 | CLUE-P3-002 | P3-1 Stale Contracts | Add staleness detection for task contracts | DONE |
+| 12 | CLUE-P2-003 | P2-2 Import Boundaries | Add Dart import graph analysis | DONE |
+| 13 | CLUE-P1-004 | P1-7 Plan Injection | Add session startup script that injects PLANS.md | DONE |
+| 14 | CLUE-P3-005 | P3-3 Dependency Graph | Add circular dep detection | DONE |
+| 15 | CLUE-F5-001 | F5 Orchestration | Design MAS protocol or remove empty .agent/ dirs | DONE |
 
 ---
 

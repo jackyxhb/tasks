@@ -1,0 +1,31 @@
+#!/bin/bash
+# check-stale-contracts — Flag task contracts older than STALE_DAYS days.
+# CLUE-P3-002
+
+set -euo pipefail
+
+STALE_DAYS="${STALE_DAYS:-30}"
+CONTRACT_DIR="${1:-examples/task-contracts}"
+SCHEMA="schemas/agent-task-contract.schema.json"
+
+found=0
+cutoff_ts=$(($(date +%s) - (STALE_DAYS * 86400)))
+
+while IFS= read -r -d '' f; do
+  mtime_ts=$(stat -f %m -- "$f")
+  if (( mtime_ts < cutoff_ts )); then
+    age=$(( ($(date +%s) - mtime_ts) / 86400 ))
+    echo "STALE: $f (${age} days old, threshold ${STALE_DAYS})"
+    found=1
+  fi
+done < <(find "$CONTRACT_DIR" -name "*.json" -print0 2>/dev/null)
+
+if (( found )); then
+  echo ""
+  echo "Consider archiving completed contracts to examples/task-contracts/archive/"
+  echo "Run: mkdir -p $CONTRACT_DIR/archive && git mv <stale-file> $CONTRACT_DIR/archive/"
+  exit 1
+fi
+
+echo "OK: No stale contracts found"
+exit 0
