@@ -65,9 +65,10 @@ find "$DOCS_DIR" -type f -name '*.md' | while IFS= read -r file; do
 
   code_files_older=$(find "$ROOT_DIR" \( -name "*.dart" -o -name "*.sh" -o -name "*.py" \) -path "*/mobile/*" -newer "$file" 2>/dev/null | head -1)
   if [ -n "$code_files_older" ]; then
-    code_mtime=$(stat -f "%Sm" -t "%Y-%m-%d" "$code_files_older" 2>/dev/null || stat -c "%y" "$code_files_older" 2>/dev/null | cut -d' ' -f1)
-    doc_mtime=$(stat -f "%Sm" -t "%Y-%m-%d" "$file" 2>/dev/null || stat -c "%y" "$file" 2>/dev/null | cut -d' ' -f1)
-    echo "[warn]   doc may be stale: $base (modified $doc_mtime, newer code found: $code_mtime)"
+    fail \
+      "doc is stale: $base (implementation changed without doc update)" \
+      "update $base to reflect current implementation, or verify the doc is still accurate" \
+      "$file"
   fi
 done
 

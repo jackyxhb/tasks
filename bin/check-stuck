@@ -1,0 +1,49 @@
+#!/bin/sh
+# Stuck detection - tracks consecutive failures and triggers escalation
+set -eu
+
+STATE_FILE="${HARNESS_STATE_FILE:-/tmp/harness-stuck-state.json}"
+MAX_FAILURES=3
+
+if [ ! -f "$STATE_FILE" ]; then
+  echo '{"failures":0,"last_failure":null,"last_code_hash":null}' > "$STATE_FILE"
+fi
+
+current_hash=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+current_time=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+count=$(cat "$STATE_FILE" | sed -n 's/.*"failures":\([0-9]*\).*/\1/p')
+
+if [ -z "$count" ]; then
+  count=0
+fi
+
+new_failures=$((count + 1))
+
+last_code=$(cat "$STATE_FILE" | sed -n 's/.*"last_code_hash":"\([^"]*\)".*/\1/p')
+
+if [ "$current_hash" != "$last_code" ] && [ -n "$last_code" ]; then
+  new_failures=1
+fi
+
+cat > "$STATE_FILE" <<EOF
+{
+  "failures": $new_failures,
+  "last_failure": "$current_time",
+  "last_code_hash": "$current_hash"
+}
+EOF
+
+if [ "$new_failures" -ge "$MAX_FAILURES" ]; then
+  echo "STUCK: $new_failures consecutive failures detected"
+  echo ""
+  echo "Last failure: $current_time"
+  echo "Code state: $current_hash"
+  echo ""
+  echo "Triggering escalation..."
+  "$0" --escalate 2>/dev/null || bin/notify.sh escalate "Stuck on $new_failures consecutive failures at $current_hash"
+  exit 1
+fi
+
+echo "FAIL_COUNT: $new_failures/$MAX_FAILURES"
+exit 0

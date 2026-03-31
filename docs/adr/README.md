@@ -4,13 +4,18 @@ This directory contains Architecture Decision Records (ADRs) for significant tec
 
 ## Active ADRs
 
+| ADR | Title | Status | File |
+|-----|-------|--------|------|
+| ADR-001 | Local-Only Storage | Accepted | [001-local-only-storage.md](001-local-only-storage.md) |
+
+## Pending ADRs (Not Yet Created)
+
 | ADR | Title | Status |
 |-----|-------|--------|
-| ADR-001 | Local-Only Storage | Accepted |
-| ADR-002 | Meeting/Task Separation | Accepted |
-| ADR-003 | AI Extraction Review Gate | Accepted |
-| ADR-004 | Import/Export Over Sync | Accepted |
-| ADR-005 | App Shell Boundaries | Accepted |
+| ADR-002 | Meeting/Task Separation | Proposed |
+| ADR-003 | AI Extraction Review Gate | Proposed |
+| ADR-004 | Import/Export Over Sync | Proposed |
+| ADR-005 | App Shell Boundaries | Proposed |
 
 ## Creating New ADRs
 
