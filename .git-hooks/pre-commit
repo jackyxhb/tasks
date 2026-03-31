@@ -5,6 +5,14 @@ set -eu
 # Skip check on build artifacts
 git diff --name-only --cached 2>/dev/null | grep -q "^build/" && exit 0
 
+# Check for high-risk changes that need approval gates
+HIGH_RISK_PATTERNS="AGENTS.md|PLANS.md|docs/app-design-spec.md"
+CHANGED_HIGH_RISK=$(git diff --name-only --cached 2>/dev/null | grep -E "$HIGH_RISK_PATTERNS" || true)
+if [ -n "$CHANGED_HIGH_RISK" ]; then
+  echo "WARNING: High-risk files changed. Ensure approval gates were followed:"
+  echo "$CHANGED_HIGH_RISK"
+fi
+
 # Run harness checks
 make check
 
@@ -22,7 +30,6 @@ if git rev-parse --verify HEAD >/dev/null 2>&1
 then
 	against=HEAD
 else
-	# Initial commit: diff against an empty tree object
 	against=$(git hash-object -t tree /dev/null)
 fi
 

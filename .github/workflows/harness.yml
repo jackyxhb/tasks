@@ -28,6 +28,9 @@ jobs:
       - name: Flutter dependency audit
         run: cd mobile/field_work_agent && flutter pub outdated --json 2>/dev/null | head -50 || echo "pub_outdated_unavailable"
 
+      - name: Dead code detection
+        run: bin/check-dead-code || true
+
       - name: Run harness pipeline
         run: make ci
 

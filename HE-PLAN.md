@@ -7,23 +7,23 @@
 
 | # | CLUE Ref | Feature | Action | Status |
 |---|---|---|---|---|
-| 1 | CLUE-P2-001 | P2-1 Automated Linters | Install pre-commit hooks from `.git-hooks/pre-commit` via `git config core.hooksPath .git-hooks` | TODO |
-| 2 | CLUE-F4-001 | F4 Ralph Loops | Implement automated stuck detection in `bin/check-stuck` that counts 3x failures and triggers escalation | TODO |
-| 3 | CLUE-P1-001 | P1-2 Context Compaction | Make `bin/summarize-context.sh` functional with actual LLM-based summarization | TODO |
-| 4 | CLUE-P3-007 | P3-4 Consolidation | Fix ADR table in `docs/adr/README.md` to match existing files | TODO |
-| 5 | CLUE-P3-003 | P3-2 Documentation Sync | Make doc freshness check exit non-zero (fail) instead of warn-only | TODO |
+| 1 | CLUE-P2-001 | P2-1 Automated Linters | Install pre-commit hooks from `.git-hooks/pre-commit` via `git config core.hooksPath .git-hooks` | DONE |
+| 2 | CLUE-F4-001 | F4 Ralph Loops | Implement automated stuck detection in `bin/check-stuck` that counts 3x failures and triggers escalation | DONE |
+| 3 | CLUE-P1-001 | P1-2 Context Compaction | Make `bin/summarize-context.sh` functional with actual LLM-based summarization | DONE |
+| 4 | CLUE-P3-007 | P3-4 Consolidation | Fix ADR table in `docs/adr/README.md` to match existing files | DONE |
+| 5 | CLUE-P3-003 | P3-2 Documentation Sync | Make doc freshness check exit non-zero (fail) instead of warn-only | DONE |
 
 ---
 
 ## Tier 2: High Priority (This week)
 
-| # | CLUE Ref | Feature | Action |
-|---|---|---|---|
-| 6 | CLUE-P2-005 | P2-3 AI Auditors | Wire task contract validation into pre-commit for non-contract files |
-| 7 | CLUE-P2-006 | P2-4 Bounded Autonomy | Add approval gate check to CI for high-risk contract changes |
-| 8 | CLUE-P1-003 | P1-6 Web Search | Add web search MCP server to `.mcp.json` or document out-of-scope |
-| 9 | CLUE-P3-001 | P3-1 Scheduled Cleanups | Add dead code detection for Dart files |
-| 10 | CLUE-P3-004 | P3-2 Doc Sync | Add CI gate requiring doc update when implementation changes |
+| # | CLUE Ref | Feature | Action | Status |
+|---|---|---|---|---|
+| 6 | CLUE-P2-005 | P2-3 AI Auditors | Wire task contract validation into pre-commit for non-contract files | DONE |
+| 7 | CLUE-P2-006 | P2-4 Bounded Autonomy | Add approval gate check to CI for high-risk contract changes | DONE |
+| 8 | CLUE-P1-003 | P1-6 Web Search | Add web search MCP server to `.mcp.json` or document out-of-scope | DONE |
+| 9 | CLUE-P3-001 | P3-1 Scheduled Cleanups | Add dead code detection for Dart files | DONE |
+| 10 | CLUE-P3-004 | P3-2 Doc Sync | Add CI gate requiring doc update when implementation changes | DONE |
 
 ---
 

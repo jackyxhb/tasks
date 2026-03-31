@@ -1,0 +1,52 @@
+#!/bin/sh
+# Dead code detection for Dart files
+set -eu
+
+ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
+FLUTTER_DIR="$ROOT_DIR/mobile/field_work_agent"
+
+echo "=== Dead Code Detection ==="
+
+# Check for unused files (dart files with no exports or imports)
+unused_count=0
+
+for file in $(find "$FLUTTER_DIR/lib" -name "*.dart" -type f 2>/dev/null); do
+  basename=$(basename "$file")
+  
+  # Skip main.dart and test entry points
+  case "$basename" in
+    main.dart|*.g.dart|*.freezed.dart) continue ;;
+  esac
+  
+  # Check if file exports anything
+  has_export=$(grep -l "^export" "$file" 2>/dev/null || true)
+  has_public_class=$(grep -l "^class \|^enum \|^typedef " "$file" 2>/dev/null || true)
+  
+  # Check if file is imported anywhere
+  is_imported=$(grep -r "import.*$(basename "$file")" "$FLUTTER_DIR/lib" 2>/dev/null | grep -v "^$file" || true)
+  
+  if [ -z "$has_export" ] && [ -z "$has_public_class" ] && [ -z "$is_imported" ]; then
+    echo "[warn]   possibly unused file: $file"
+    unused_count=$((unused_count + 1))
+  fi
+done
+
+# Check for empty directories
+for dir in $(find "$FLUTTER_DIR/lib" -type d -empty 2>/dev/null); do
+  echo "[warn]   empty directory: $dir"
+done
+
+# Check for TODO/FIXME comments that should be addressed
+todo_count=$(grep -r "TODO\|FIXME\|XXX\|HACK" "$FLUTTER_DIR/lib" 2>/dev/null | wc -l | tr -d ' ')
+if [ "$todo_count" -gt 0 ]; then
+  echo "[info]   TODO/FIXME comments found: $todo_count"
+fi
+
+if [ "$unused_count" -gt 0 ]; then
+  echo ""
+  echo "WARNING: $unused_count possibly unused files detected"
+  echo "Review and remove unused files to reduce entropy"
+fi
+
+echo "=== Dead Code Check Complete ==="
+exit 0

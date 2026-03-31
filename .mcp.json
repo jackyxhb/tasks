@@ -8,5 +8,9 @@
         "http://localhost:11434/api"
       ]
     }
+  },
+  "notes": {
+    "web-search": "Out of scope for v1. The app is local-only; internet access is only used for explicit LLM features.",
+    "adding-web-search": "To add web search, install an MCP server like 'mcp-exa' or 'mcp-tavily' and add to mcpServers above."
   }
 }
