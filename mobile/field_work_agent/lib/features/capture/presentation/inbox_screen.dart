@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/app_shell_controller.dart';
+import '../../../app/app_runtime.dart';
 import '../../../app/app_sections.dart';
 import '../../../app/section_primitives.dart';
 import '../../../domain/entities/raw_capture_entity.dart';

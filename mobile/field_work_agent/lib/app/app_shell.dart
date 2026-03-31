@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'app_runtime.dart';
 import 'app_sections.dart';
-import 'app_shell_controller.dart';
 import 'section_screens.dart';
 
 class FieldWorkAgentApp extends StatelessWidget {
   const FieldWorkAgentApp({
     super.key,
-    this.controller = const StaticAppShellController(AppShellData.empty()),
+    this.controller = const LocalAppShellController(),
   });
 
   final AppShellController controller;

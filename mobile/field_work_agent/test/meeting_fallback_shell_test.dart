@@ -15,13 +15,10 @@ import 'package:field_work_agent/domain/enums/raw_capture_parse_status.dart';
 import 'package:field_work_agent/domain/enums/task_candidate_state.dart';
 import 'package:field_work_agent/domain/enums/task_type.dart';
 import 'package:field_work_agent/app/app_runtime.dart';
-import 'package:field_work_agent/app/app_shell_controller.dart';
 import 'package:field_work_agent/features/meetings/presentation/meetings_screen.dart';
 
 void main() {
-  testWidgets(
-      'meeting screen shows pending, failed, and manual fallback states',
-      (WidgetTester tester) async {
+  testWidgets('meeting screen shows pending, failed, and manual fallback states', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -120,7 +117,6 @@ void main() {
     expect(find.text('AI pending'), findsWidgets);
     expect(find.text('Manual fallback'), findsWidgets);
     expect(find.text('Transcription failed'), findsWidgets);
-    expect(
-        find.textContaining('Offline: no provider available'), findsOneWidget);
+    expect(find.textContaining('Offline: no provider available'), findsOneWidget);
   });
 }
