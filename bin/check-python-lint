@@ -1,0 +1,33 @@
+#!/bin/bash
+# check-python-lint — Lint Python scripts with ruff if available, fallback to python3 -m py_compile.
+# CLUE-P2-002
+
+set -euo pipefail
+
+SCRIPTS_DIR="scripts"
+BIN_DIR="bin"
+
+lint_with_ruff() {
+  ruff check "$SCRIPTS_DIR" "$BIN_DIR" --config pyproject.toml
+}
+
+lint_with_compile() {
+  found=0
+  while IFS= read -r -d '' f; do
+    if ! python3 -m py_compile "$f" 2>&1; then
+      found=1
+    fi
+  done < <(find "$SCRIPTS_DIR" "$BIN_DIR" -name "*.py" -print0 2>/dev/null)
+  return $found
+}
+
+if command -v ruff &>/dev/null; then
+  lint_with_ruff
+elif python3 -m ruff &>/dev/null; then
+  python3 -m ruff check "$SCRIPTS_DIR" "$BIN_DIR" --config pyproject.toml
+else
+  echo "ruff not found, falling back to syntax check"
+  lint_with_compile
+fi
+
+echo "OK: Python lint checks passed"

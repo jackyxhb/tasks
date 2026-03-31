@@ -25,3 +25,35 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-commit]
+
+      - id: stale-contracts
+        name: Stale Contract Detection
+        entry: bin/check-stale-contracts
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: dart-imports
+        name: Dart Import Graph Check
+        entry: python3 bin/check-dart-imports
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: python-lint
+        name: Python Lint Check
+        entry: bin/check-python-lint
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: changelog
+        name: Changelog Check
+        entry: bin/check-changelog
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]

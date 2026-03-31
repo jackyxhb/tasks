@@ -20,14 +20,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ADR directory (`docs/adr/`)
 - CI status tracking (`scripts/.ci_status.json`)
 - Doc freshness warnings in checks
+- Stale task contract detection (`bin/check-stale-contracts`)
+- Dart import graph + circular dependency detection (`bin/check-dart-imports`)
+- Session startup script for PLANS.md injection (`bin/session-startup.sh`)
+- Prompt reinjection for long tasks (`bin/reinject-context.sh`)
+- Performance tracking (`bin/check-perf`)
+- Metrics auto-collection (`bin/check-metrics`)
+- Python linting with ruff config (`pyproject.toml`, `bin/check-python-lint`)
+- Changelog check (`bin/check-changelog`)
+- Pub outdated check (`bin/check-pub-outdated`)
+- Machine-readable pattern registry (`schemas/pattern-registry.json`)
+- ADR-002: Multi-Agent Orchestration decision (rejected for v1)
 
 ### Changed
 - `bin/check-gc` now warns on stale docs vs code
 - `bin/check-docs` now warns on stale docs vs code  
 - `scripts/harness/mobile_test.sh` now has timeout guards
+- Pre-commit hooks now include stale contracts, import graph, Python lint, changelog checks
+- Makefile.harness now includes `harness-extensions`, `perf`, and `metrics` targets
 
 ### Fixed
 - Legacy doc (ARCHIVE_FORMAT.md, WORK_HOURS_RECORD_FORMAT.md) properly handled
+- Removed empty `.agent/` and `.agents/` directories
 
 ---
 

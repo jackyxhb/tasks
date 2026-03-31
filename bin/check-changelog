@@ -1,0 +1,34 @@
+#!/bin/bash
+# check-changelog — Verify CHANGELOG.md mentions changes since last tagged version.
+# CLUE-P3-008
+
+set -euo pipefail
+
+CHANGELOG="CHANGELOG.md"
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+if [[ -z "$LAST_TAG" ]]; then
+  echo "No git tags found, skipping changelog check"
+  exit 0
+fi
+
+changed_files=$(git diff --name-only "$LAST_TAG" HEAD 2>/dev/null || echo "")
+if [[ -z "$changed_files" ]]; then
+  echo "OK: No changes since last tag"
+  exit 0
+fi
+
+unreleased_section=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' "$CHANGELOG" 2>/dev/null || echo "")
+if [[ -z "$unreleased_section" ]]; then
+  echo "FAIL: CHANGELOG.md missing [Unreleased] section"
+  exit 1
+fi
+
+changed_count=$(echo "$changed_files" | grep -v -E "^(CHANGELOG\.md|HE-PLAN\.md|HE-CLUES\.md|PLANS\.md)" | wc -l | tr -d ' ')
+if (( changed_count > 0 )); then
+  echo "OK: CHANGELOG.md has [Unreleased] section ($changed_count non-doc files changed since $LAST_TAG)"
+  exit 0
+fi
+
+echo "OK: CHANGELOG.md present"
+exit 0

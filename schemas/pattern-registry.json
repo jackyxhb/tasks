@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "patterns": [
+    {
+      "id": "PATTERN-001",
+      "name": "Local-Only Storage",
+      "description": "v1 uses SQLite + local file storage only. No sync, no shared backend.",
+      "check": "bin/check-local-only-code",
+      "severity": "high"
+    },
+    {
+      "id": "PATTERN-002",
+      "name": "Meeting/Task Separation",
+      "description": "Meeting records are separate entities from tasks. Meetings can emit task candidates.",
+      "check": "bin/check-meeting-review-gate",
+      "severity": "high"
+    },
+    {
+      "id": "PATTERN-003",
+      "name": "AI Review Gate",
+      "description": "AI extraction creates reviewable candidates, never auto-final records.",
+      "check": "bin/check-meeting-review-gate",
+      "severity": "high"
+    },
+    {
+      "id": "PATTERN-004",
+      "name": "Import/Export Over Sync",
+      "description": "Data exchange happens via versioned JSON bundles, not live sync.",
+      "check": "bin/check-bundle-schema",
+      "severity": "high"
+    },
+    {
+      "id": "PATTERN-005",
+      "name": "App Shell Boundaries",
+      "description": "Shell code lives in lib/app/, feature code in feature folders.",
+      "check": "bin/check-mobile-project-structure",
+      "severity": "medium"
+    },
+    {
+      "id": "PATTERN-006",
+      "name": "Home Quick Actions",
+      "description": "Documented Home quick actions must map to real user-completable flows.",
+      "check": "bin/check-home-quick-actions",
+      "severity": "medium"
+    },
+    {
+      "id": "PATTERN-007",
+      "name": "Doc Canonical Source",
+      "description": "docs/ is the canonical source of truth for app design.",
+      "check": "bin/check-docs",
+      "severity": "high"
+    },
+    {
+      "id": "PATTERN-008",
+      "name": "Import Graph Integrity",
+      "description": "Dart import graph must not contain cycles or cross-layer violations.",
+      "check": "bin/check-dart-imports",
+      "severity": "medium"
+    }
+  ]
+}

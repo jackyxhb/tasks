@@ -41,16 +41,16 @@
 
 ## Tier 4: Lower Priority (When needed)
 
-| # | CLUE Ref | Feature | Action |
-|---|---|---|---|
-| 16 | CLUE-P2-002 | P2-1 Python Linting | Add ruff config for Python scripts |
-| 17 | CLUE-P3-008 | P3-4 Changelog | Add pre-commit changelog sync |
-| 18 | CLUE-P3-009 | P3-4 Metrics | Add auto-collection for control-loop-metrics.yaml |
-| 19 | CLUE-F4-002 | F4 Reinjection | Implement prompt reinjection for long tasks |
-| 20 | CLUE-F8-001 | F8 Versioning | Add performance tracking infrastructure |
-| 21 | CLUE-P2-004 | P2-2 Dependency Audit | Make pub outdated a hard CI failure |
-| 22 | CLUE-P3-006 | P3-3 Pattern Registry | Make prose patterns machine-readable |
-| 23 | CLUE-F1-001 | F1 Sandboxing | Add Docker/devcontainer (needs human input) |
+| # | CLUE Ref | Feature | Action | Status |
+|---|---|---|---|---|
+| 16 | CLUE-P2-002 | P2-1 Python Linting | Add ruff config for Python scripts | DONE |
+| 17 | CLUE-P3-008 | P3-4 Changelog | Add pre-commit changelog sync | DONE |
+| 18 | CLUE-P3-009 | P3-4 Metrics | Add auto-collection for control-loop-metrics.yaml | DONE |
+| 19 | CLUE-F4-002 | F4 Reinjection | Implement prompt reinjection for long tasks | DONE |
+| 20 | CLUE-F8-001 | F8 Versioning | Add performance tracking infrastructure | DONE |
+| 21 | CLUE-P2-004 | P2-2 Dependency Audit | Make pub outdated a hard CI failure | DONE |
+| 22 | CLUE-P3-006 | P3-3 Pattern Registry | Make prose patterns machine-readable | DONE |
+| 23 | CLUE-F1-001 | F1 Sandboxing | Add Docker/devcontainer (needs human input) | DEFERRED |
 
 ---
 

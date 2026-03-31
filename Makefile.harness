@@ -1,6 +1,6 @@
 HARNESS_VERSION := 0.2.0
 
-.PHONY: version smoke test lint typecheck check task-contract mobile-preflight mobile-run mobile-ios-smoke mobile-typecheck mobile-test audit ci
+.PHONY: version smoke test lint typecheck check task-contract mobile-preflight mobile-run mobile-ios-smoke mobile-typecheck mobile-test audit ci harness-extensions perf metrics
 
 version:
 	@echo "Harness version: $(HARNESS_VERSION)"
@@ -41,3 +41,16 @@ audit:
 	@python3 ./scripts/harness_wizard.py audit .
 
 ci: smoke check test
+
+harness-extensions:
+	@./bin/check-stale-contracts
+	@python3 ./bin/check-dart-imports
+	@./bin/check-python-lint
+	@./bin/check-changelog
+	@./bin/check-pub-outdated
+
+perf:
+	@./bin/check-perf
+
+metrics:
+	@./bin/check-metrics

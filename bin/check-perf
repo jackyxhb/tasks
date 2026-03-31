@@ -1,0 +1,48 @@
+#!/bin/bash
+# check-perf — Track harness command execution times.
+# CLUE-F8-001
+
+set -euo pipefail
+
+PERF_FILE=".harness/perf.log"
+mkdir -p .harness
+
+TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
+
+echo "=== Harness Performance Report ==="
+echo "Generated: $TIMESTAMP"
+echo ""
+
+run_check() {
+  local name="$1"
+  local cmd="$2"
+  local start=$(date +%s)
+  local result
+  if result=$(eval "$cmd" 2>&1); then
+    local end=$(date +%s)
+    local elapsed=$((end - start))
+    echo "  PASS  ${elapsed}s  $name"
+    echo "$TIMESTAMP $name $elapsed PASS" >> "$PERF_FILE"
+  else
+    local end=$(date +%s)
+    local elapsed=$((end - start))
+    echo "  FAIL  ${elapsed}s  $name"
+    echo "$TIMESTAMP $name $elapsed FAIL" >> "$PERF_FILE"
+  fi
+}
+
+run_check "check-docs" "bin/check-docs"
+run_check "check-constraints" "bin/check-constraints"
+run_check "check-gc" "bin/check-gc"
+run_check "check-stale-contracts" "bin/check-stale-contracts"
+run_check "check-dart-imports" "python3 bin/check-dart-imports"
+run_check "check-changelog" "bin/check-changelog"
+run_check "check-python-lint" "bin/check-python-lint"
+run_check "check-metrics" "bin/check-metrics"
+
+echo ""
+if [[ -f "$PERF_FILE" ]]; then
+  echo "Historical data in $PERF_FILE"
+  total=$(wc -l < "$PERF_FILE" | tr -d ' ')
+  echo "Total runs: $total"
+fi

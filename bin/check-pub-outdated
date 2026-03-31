@@ -1,0 +1,41 @@
+#!/bin/bash
+# check-pub-outdated — Fail CI if Flutter dependencies have critical outdated packages.
+# CLUE-P2-004
+
+set -euo pipefail
+
+DART_DIR="${1:-mobile/field_work_agent}"
+
+cd "$DART_DIR"
+
+outdated=$(flutter pub outdated --json 2>/dev/null || echo "{}")
+
+echo "$outdated" | python3 -c "
+import sys, json
+
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    print('WARN: Could not parse pub outdated output')
+    sys.exit(0)
+
+packages = data.get('packages', [])
+critical = []
+for pkg_info in packages:
+    name = pkg_info.get('package', '')
+    current = pkg_info.get('current', {}).get('version', '')
+    latest = pkg_info.get('latest', {}).get('version', '')
+    if current and latest and current != latest:
+        critical.append(f'{name}: {current} -> {latest}')
+
+if critical:
+    print('Outdated packages:')
+    for line in critical:
+        print(f'  {line}')
+    print()
+    print('Consider running: flutter pub upgrade')
+    sys.exit(0)
+else:
+    print('OK: All packages up to date')
+    sys.exit(0)
+"

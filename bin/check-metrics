@@ -1,0 +1,41 @@
+#!/bin/bash
+# check-metrics — Auto-collect harness control-loop metrics.
+# CLUE-P3-009
+
+set -euo pipefail
+
+METRICS_FILE="evals/control-loop-metrics.yaml"
+RESULTS_DIR=".harness/metrics"
+TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
+
+mkdir -p "$RESULTS_DIR"
+
+echo "Collecting harness metrics at $TIMESTAMP"
+
+results_file="$RESULTS_DIR/$(date +%Y-%m-%d).json"
+
+canonical_docs_integrity=$(bin/check-docs 2>/dev/null && echo 1 || echo 0)
+harness_audit_pass_rate=$(bin/check-constraints 2>/dev/null && echo 1 || echo 0)
+stale_doc_failures=$(bin/check-gc 2>&1 | grep -c "STALE" || true)
+scope_drift=$(bin/check-constraints 2>&1 | grep -c "FAIL" || true)
+
+cat > "$results_file" <<EOF
+{
+  "timestamp": "$TIMESTAMP",
+  "metrics": {
+    "canonical_docs_integrity": $canonical_docs_integrity,
+    "harness_audit_pass_rate": $harness_audit_pass_rate,
+    "stale_doc_failures": $stale_doc_failures,
+    "scope_drift_failures": $scope_drift
+  }
+}
+EOF
+
+echo "Metrics written to $results_file"
+
+cat "$METRICS_FILE" | python3 -c "
+import sys, json
+data = json.load(open('$results_file'))
+for name, value in data['metrics'].items():
+  print(f'  {name}: {value}')
+" 2>/dev/null || true

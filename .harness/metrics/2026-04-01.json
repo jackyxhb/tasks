@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-04-01T01:20:11+1300",
+  "metrics": {
+    "canonical_docs_integrity": OK: required docs exist and are linked from docs/app-design-spec.md
+1,
+    "harness_audit_pass_rate": OK: design constraints are present
+1,
+    "stale_doc_failures": 0,
+    "scope_drift_failures": 0
+  }
+}
