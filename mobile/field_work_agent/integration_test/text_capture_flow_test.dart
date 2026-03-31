@@ -4,6 +4,7 @@ import 'package:integration_test/integration_test.dart';
 
 import 'package:field_work_agent/app/app_runtime.dart';
 import 'package:field_work_agent/app/app_shell.dart';
+import 'package:field_work_agent/app/app_shell_controller.dart';
 import 'package:field_work_agent/domain/entities/raw_capture_entity.dart';
 import 'package:field_work_agent/domain/enums/raw_capture_channel.dart';
 import 'package:field_work_agent/domain/enums/raw_capture_parse_status.dart';

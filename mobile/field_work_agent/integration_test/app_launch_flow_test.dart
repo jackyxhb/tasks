@@ -4,6 +4,7 @@ import 'package:integration_test/integration_test.dart';
 
 import 'package:field_work_agent/app/app_runtime.dart';
 import 'package:field_work_agent/app/app_shell.dart';
+import 'package:field_work_agent/app/app_shell_controller.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

@@ -25,6 +25,7 @@ import 'package:field_work_agent/features/search/application/search_models.dart'
 import 'package:field_work_agent/features/tasks/application/task_models.dart';
 import 'package:field_work_agent/app/app_runtime.dart';
 import 'package:field_work_agent/app/app_sections.dart';
+import 'package:field_work_agent/app/app_shell_controller.dart';
 import 'package:field_work_agent/app/section_screens.dart';
 
 void main() {
@@ -84,8 +85,11 @@ void main() {
     await tester.tap(find.text('Review Task'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextField, 'Task Title'), 'Updated training support');
-    await tester.enterText(find.widgetWithText(TextField, 'Scheduled Date (YYYY-MM-DD)'), '2026-03-11');
+    await tester.enterText(find.widgetWithText(TextField, 'Task Title'),
+        'Updated training support');
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Scheduled Date (YYYY-MM-DD)'),
+        '2026-03-11');
     await tester.tap(find.text('Create Task'));
     await tester.pumpAndSettle();
 
@@ -113,7 +117,8 @@ void main() {
           title: 'Pompallier Coordination',
           reviewState: MeetingReviewState.taskCandidateResolution,
           needsReview: true,
-          transcriptText: 'Need on-site training support for Lin Yong tomorrow.',
+          transcriptText:
+              'Need on-site training support for Lin Yong tomorrow.',
           taskCandidates: const <MeetingTaskCandidateEntity>[
             MeetingTaskCandidateEntity(
               id: 'candidate_1',
@@ -181,7 +186,8 @@ void main() {
           title: 'Pompallier Coordination',
           reviewState: MeetingReviewState.taskCandidateResolution,
           needsReview: true,
-          transcriptText: 'Need on-site training support for Lin Yong tomorrow.',
+          transcriptText:
+              'Need on-site training support for Lin Yong tomorrow.',
           taskCandidates: const <MeetingTaskCandidateEntity>[
             MeetingTaskCandidateEntity(
               id: 'candidate_1',
@@ -236,7 +242,8 @@ void main() {
     expect(controller.acceptedMeetingId, 'meeting_1');
     expect(controller.acceptedCandidateId, 'candidate_1');
     expect(controller.updatedCandidateDraft, isNotNull);
-    expect(controller.updatedCandidateDraft!.taskTitle, 'Edited candidate title');
+    expect(
+        controller.updatedCandidateDraft!.taskTitle, 'Edited candidate title');
   });
 
   testWidgets('meeting review dialog submits candidate merge', (
@@ -279,7 +286,8 @@ void main() {
           title: 'Pompallier Coordination',
           reviewState: MeetingReviewState.taskCandidateResolution,
           needsReview: true,
-          transcriptText: 'Need on-site training support for Lin Yong tomorrow.',
+          transcriptText:
+              'Need on-site training support for Lin Yong tomorrow.',
           taskCandidates: const <MeetingTaskCandidateEntity>[
             MeetingTaskCandidateEntity(
               id: 'candidate_1',
@@ -332,7 +340,8 @@ void main() {
     expect(controller.mergedTaskId, 'task_1');
   });
 
-  testWidgets('meeting review dialog submits manual fallback with current draft', (
+  testWidgets(
+      'meeting review dialog submits manual fallback with current draft', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(1400, 1800);
@@ -572,7 +581,8 @@ void main() {
     expect(find.text('Generated Bundle'), findsOneWidget);
   });
 
-  testWidgets('project screen submits project draft', (WidgetTester tester) async {
+  testWidgets('project screen submits project draft',
+      (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1400, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -728,26 +738,32 @@ class _FakeAppShellController implements AppShellController {
   }
 
   @override
-  Future<AppShellData> beginMeetingReview({required String meetingId, String? actorName}) async => data;
-
-  @override
-  Future<AppShellData> beginMeetingTaskCandidateResolution({required String meetingId, String? actorName}) async =>
+  Future<AppShellData> beginMeetingReview(
+          {required String meetingId, String? actorName}) async =>
       data;
 
   @override
-  Future<AppShellData> createProject({required ProjectDraft draft, String? actorName}) async {
+  Future<AppShellData> beginMeetingTaskCandidateResolution(
+          {required String meetingId, String? actorName}) async =>
+      data;
+
+  @override
+  Future<AppShellData> createProject(
+      {required ProjectDraft draft, String? actorName}) async {
     createdProjectDraft = draft;
     return data;
   }
 
   @override
-  Future<AppShellData> createTask({required TaskDraft draft, String? actorName}) async {
+  Future<AppShellData> createTask(
+      {required TaskDraft draft, String? actorName}) async {
     createdTaskDraft = draft;
     return data;
   }
 
   @override
-  Future<AppShellData> createTaskFromCapture({required CaptureTaskReviewDraft draft, String? actorName}) async {
+  Future<AppShellData> createTaskFromCapture(
+      {required CaptureTaskReviewDraft draft, String? actorName}) async {
     captureTaskDraft = draft;
     return data;
   }
@@ -756,10 +772,13 @@ class _FakeAppShellController implements AppShellController {
   Future<AppShellData> createRawTextCapture({
     required String textContent,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
-  Future<AppShellData> finalizeMeeting({required String meetingId, String? actorName}) async => data;
+  Future<AppShellData> finalizeMeeting(
+          {required String meetingId, String? actorName}) async =>
+      data;
 
   @override
   Future<AppShellData> mergeMeetingCandidateIntoTask({
@@ -775,7 +794,9 @@ class _FakeAppShellController implements AppShellController {
   }
 
   @override
-  Future<AppShellData> markCaptureReviewed({required String captureId, String? actorName}) async => data;
+  Future<AppShellData> markCaptureReviewed(
+          {required String captureId, String? actorName}) async =>
+      data;
 
   @override
   Future<AppShellData> moveMeetingToManualReview({
@@ -790,10 +811,14 @@ class _FakeAppShellController implements AppShellController {
   }
 
   @override
-  Future<AppShellData> archiveProject({required String projectId, String? actorName}) async => data;
+  Future<AppShellData> archiveProject(
+          {required String projectId, String? actorName}) async =>
+      data;
 
   @override
-  Future<AppShellData> archiveTask({required String taskId, String? actorName}) async => data;
+  Future<AppShellData> archiveTask(
+          {required String taskId, String? actorName}) async =>
+      data;
 
   @override
   Future<AppShellData> applyImportBundle({
@@ -868,7 +893,10 @@ class _FakeAppShellController implements AppShellController {
   }
 
   @override
-  Future<AppShellData> rejectMeetingCandidate({required String meetingId, required String candidateId, String? actorName}) async =>
+  Future<AppShellData> rejectMeetingCandidate(
+          {required String meetingId,
+          required String candidateId,
+          String? actorName}) async =>
       data;
 
   @override
@@ -905,10 +933,12 @@ class _FakeAppShellController implements AppShellController {
     required String candidateId,
     required String agenteeName,
     String? actorName,
-  }) async => data;
+  }) async =>
+      data;
 
   @override
-  Future<GroupedSearchResults> searchRecords({required SearchRequest request}) async {
+  Future<GroupedSearchResults> searchRecords(
+      {required SearchRequest request}) async {
     searchRequest = request;
     return const GroupedSearchResults(
       projects: <SearchHit>[],
@@ -918,7 +948,8 @@ class _FakeAppShellController implements AppShellController {
           recordType: 'meeting',
           recordId: 'meeting_1',
           title: 'Meeting transcript match',
-          snippet: 'handover checklist appears in corrected transcript and summary.',
+          snippet:
+              'handover checklist appears in corrected transcript and summary.',
         ),
       ],
       rawCaptures: <SearchHit>[],
@@ -950,13 +981,19 @@ class _FakeAppShellController implements AppShellController {
   }
 
   @override
-  Future<AppShellData> updateProject({required String projectId, required ProjectDraft draft, String? actorName}) async {
+  Future<AppShellData> updateProject(
+      {required String projectId,
+      required ProjectDraft draft,
+      String? actorName}) async {
     createdProjectDraft = draft;
     return data;
   }
 
   @override
-  Future<AppShellData> updateTask({required String taskId, required TaskDraft draft, String? actorName}) async {
+  Future<AppShellData> updateTask(
+      {required String taskId,
+      required TaskDraft draft,
+      String? actorName}) async {
     createdTaskDraft = draft;
     return data;
   }

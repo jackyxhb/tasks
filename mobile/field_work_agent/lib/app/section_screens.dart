@@ -13,8 +13,8 @@ import '../features/projects/presentation/projects_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
 import '../features/search/presentation/search_screen.dart';
 import '../features/tasks/presentation/tasks_screen.dart';
-import 'app_runtime.dart';
 import 'app_sections.dart';
+import 'app_shell_controller.dart';
 import 'section_primitives.dart';
 
 class SectionBody extends StatelessWidget {
@@ -212,7 +212,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
             color: const Color(0xFF4D5F8C)),
         MetricData(
             title: 'Exports / Imports',
-            value: '${widget.data.importRuns.length + widget.data.exportRuns.length}',
+            value:
+                '${widget.data.importRuns.length + widget.data.exportRuns.length}',
             detail: 'Recent bundle exchange and report generation activity.',
             color: const Color(0xFF6D4B73)),
       ],
@@ -597,6 +598,7 @@ String _joinParts(List<String?> parts) {
       .where((value) => value.trim().isNotEmpty)
       .join(' • ');
 }
+
 String _meetingStatusLabel(MeetingReviewState state) {
   switch (state) {
     case MeetingReviewState.recordedPendingTranscription:
@@ -628,5 +630,3 @@ String _meetingStatusLabel(MeetingReviewState state) {
       return 'Recording';
   }
 }
-
-
